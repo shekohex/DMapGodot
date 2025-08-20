@@ -31,8 +31,12 @@ namespace DMapImporter.Tests
             AssertThat(objectLayer).IsNotNull();
             AssertThat(objectLayer!.Name).IsEqual("ObjectLayer");
 
+            // Get the Portals sublayer (created by our new layer management system)
+            var portalLayer = objectLayer.GetNode<Node2D>("Portals");
+            AssertThat(portalLayer).IsNotNull();
+
             var portalCount = 0;
-            foreach (Node child in objectLayer.GetChildren())
+            foreach (Node child in portalLayer.GetChildren())
             {
                 if (child is DMapPortal dmapPortal)
                 {
@@ -72,8 +76,11 @@ namespace DMapImporter.Tests
             var objectLayer = renderer.GetChild(2) as Node2D;
             AssertThat(objectLayer).IsNotNull();
 
+            var portalLayer = objectLayer.GetNode<Node2D>("Portals");
+            AssertThat(portalLayer).IsNotNull();
+
             var portalNodes = new System.Collections.Generic.List<DMapPortal>();
-            foreach (Node child in objectLayer!.GetChildren())
+            foreach (Node child in portalLayer.GetChildren())
             {
                 if (child is DMapPortal portal)
                 {
@@ -103,7 +110,8 @@ namespace DMapImporter.Tests
             renderer.LoadFromDMap(dmapFile);
 
             var objectLayer = renderer.GetChild(2) as Node2D;
-            var portalNode = objectLayer!.GetChildren().OfType<DMapPortal>().FirstOrDefault();
+            var portalLayer = objectLayer.GetNode<Node2D>("Portals");
+            var portalNode = portalLayer.GetChildren().OfType<DMapPortal>().FirstOrDefault();
 
             AssertThat(portalNode).IsNotNull();
 

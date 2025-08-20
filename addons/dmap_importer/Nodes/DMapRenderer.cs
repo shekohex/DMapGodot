@@ -1,8 +1,11 @@
 using Godot;
 using DMapImporter.Core.Dmap;
 using DMapImporter.Core.Utility;
+using DMapGodot.Importers;
 using System;
 using System.Drawing;
+using System.IO;
+using System.Collections.Generic;
 
 namespace DMapImporter.Nodes
 {
@@ -55,6 +58,8 @@ namespace DMapImporter.Nodes
         private Node2D? _objectLayer;
         private CoordinateHelper? _coordinateHelper;
         private CordConverter? _cordConverter;
+        private Dictionary<string, SceneFile> _loadedSceneFiles = new();
+        private string _clientPath = string.Empty;
 
         public override void _Ready()
         {
@@ -76,6 +81,9 @@ namespace DMapImporter.Nodes
             DMapPath = dmap.DmapPath;
             MapSize = new Vector2I((int)dmap.SizeTiles.Width, (int)dmap.SizeTiles.Height);
 
+            // Extract client path from DMapPath
+            _clientPath = ExtractClientPath(dmap.DmapPath);
+
             // Initialize coordinate helper
             _coordinateHelper = new CoordinateHelper(dmap);
 
@@ -89,6 +97,7 @@ namespace DMapImporter.Nodes
 
             ClearChildren();
             CreateLayers();
+            CreateSceneLayerManagement();
             CreateSelectionLayer();
             PopulateFromDMap();
         }
@@ -211,37 +220,359 @@ namespace DMapImporter.Nodes
             }
         }
 
+        private string ExtractClientPath(string dmapPath)
+        {
+            try
+            {
+                // Extract the base directory where game client files are located
+                // The DMap path typically looks like: /path/to/Game/5017/map/filename.dmap
+                var directory = Path.GetDirectoryName(dmapPath);
+                if (directory != null)
+                {
+                    // Go up directories until we find the client root (containing 'data' folder)
+                    var current = new DirectoryInfo(directory);
+                    while (current != null && current.Parent != null)
+                    {
+                        var dataPath = Path.Combine(current.FullName, "data");
+                        if (Directory.Exists(dataPath))
+                        {
+                            return current.FullName;
+                        }
+                        current = current.Parent;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                GD.PrintErr($"Error extracting client path from {dmapPath}: {ex.Message}");
+            }
+
+            return string.Empty;
+        }
+
         private void PlaceObjectMarkers()
         {
             if (_dmapFile == null || _objectLayer == null || _cordConverter == null) return;
 
             // Place DMapPortal nodes for portals
+            var portalLayer = GetPortalLayer() ?? _objectLayer;
             foreach (var portal in _dmapFile.Portals)
             {
                 var portalNode = new DMapPortal(portal, _cordConverter);
-                _objectLayer.AddChild(portalNode);
+                portalLayer?.AddChild(portalNode);
 
                 if (Engine.IsEditorHint())
                 {
-                    portalNode.Owner = GetTree()?.EditedSceneRoot;
+                    var root = GetTree()?.EditedSceneRoot;
+                    if (root != null) portalNode.Owner = root;
                 }
             }
 
-            // Place markers for covers
+            // Render scene objects from TerrainScenes
+            RenderSceneObjects();
+
+            // Render cover objects with actual sprites
+            RenderCoverObjects();
+        }
+
+        private void RenderSceneObjects()
+        {
+            if (_dmapFile == null || _objectLayer == null || string.IsNullOrEmpty(_clientPath)) return;
+
+            foreach (var terrainScene in _dmapFile.TerrainScenes)
+            {
+                try
+                {
+                    var sceneFile = LoadSceneFile(terrainScene.SceneFile);
+                    if (sceneFile != null)
+                    {
+                        RenderSceneParts(sceneFile, terrainScene.Position);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    GD.PrintErr($"Error rendering scene {terrainScene.SceneFile}: {ex.Message}");
+                }
+            }
+        }
+
+        private SceneFile? LoadSceneFile(string sceneFilePath)
+        {
+            if (string.IsNullOrEmpty(sceneFilePath)) return null;
+
+            // Check cache first
+            if (_loadedSceneFiles.TryGetValue(sceneFilePath, out var cachedScene))
+            {
+                return cachedScene;
+            }
+
+            try
+            {
+                var sceneFile = new SceneFile(_clientPath, sceneFilePath);
+                _loadedSceneFiles[sceneFilePath] = sceneFile;
+                return sceneFile;
+            }
+            catch (Exception ex)
+            {
+                GD.PrintErr($"Failed to load scene file {sceneFilePath}: {ex.Message}");
+                return null;
+            }
+        }
+
+        private void RenderSceneParts(SceneFile sceneFile, TilePosition basePosition)
+        {
+            foreach (var scenePart in sceneFile.SceneParts)
+            {
+                RenderScenePart(scenePart, basePosition);
+            }
+        }
+
+        private void RenderScenePart(ScenePart scenePart, TilePosition basePosition)
+        {
+            if (string.IsNullOrEmpty(scenePart.AniPath) || string.IsNullOrEmpty(scenePart.AniName))
+                return;
+
+            // Calculate world position using coordinate converter and scene positioning
+            var worldPos = CalculateScenePartPosition(scenePart, basePosition);
+
+            // Load texture for the scene part
+            var texture = LoadSceneTexture(scenePart.AniPath, scenePart.AniName);
+            if (texture == null) return;
+
+            // Create sprite node for the scene part
+            var sprite = new Sprite2D();
+            sprite.Name = $"Scene_{scenePart.AniName}";
+            sprite.Texture = texture;
+
+            // Calculate final position with Y-sorting consideration
+            var finalPosition = CalculateYSortedPosition(worldPos, scenePart.OffsetElevation);
+            sprite.Position = finalPosition;
+
+            // Add to appropriate layer
+            var sceneLayer = GetSceneObjectsLayer() ?? _objectLayer;
+            sceneLayer?.AddChild(sprite);
+
+            if (Engine.IsEditorHint())
+            {
+                var root = GetTree()?.EditedSceneRoot;
+                if (root != null) sprite.Owner = root;
+            }
+        }
+
+        private void RenderCoverObjects()
+        {
+            if (_dmapFile == null || _objectLayer == null) return;
+
             foreach (var cover in _dmapFile.Covers)
             {
-                var marker = new Marker2D();
-                marker.Name = $"Cover_{cover.AniName}";
-                marker.Position = new Vector2(
-                    cover.Position.X * 64,
-                    cover.Position.Y * 32
-                );
-                _objectLayer.AddChild(marker);
+                RenderCoverObject(cover);
+            }
+        }
 
-                if (Engine.IsEditorHint())
+        private void RenderCoverObject(Cover cover)
+        {
+            if (string.IsNullOrEmpty(cover.AniPath) || string.IsNullOrEmpty(cover.AniName))
+                return;
+
+            // Convert cover position to world coordinates
+            var worldPos = CalculateCoverPosition(cover);
+
+            // Load texture for the cover
+            var texture = LoadSceneTexture(cover.AniPath, cover.AniName);
+            if (texture == null)
+            {
+                // Fallback to marker if texture loading fails
+                CreateCoverMarker(cover, worldPos);
+                return;
+            }
+
+            // Create sprite node for the cover
+            var sprite = new Sprite2D();
+            sprite.Name = $"Cover_{cover.AniName}";
+            sprite.Texture = texture;
+
+            // Apply pixel offset if specified
+            var offsetPos = worldPos;
+            if (cover.Offset.X != 0 || cover.Offset.Y != 0)
+            {
+                offsetPos = new Vector2(
+                    worldPos.X + cover.Offset.X,
+                    worldPos.Y + cover.Offset.Y
+                );
+            }
+
+            // Calculate Y-sorted position (covers are typically at ground level)
+            sprite.Position = CalculateYSortedPosition(offsetPos, 0);
+
+            // Set transparency for cover objects (they often need to be semi-transparent)
+            sprite.Modulate = new Godot.Color(1, 1, 1, 0.8f);
+
+            // Add to appropriate layer
+            var coverLayer = GetCoverObjectsLayer() ?? _objectLayer;
+            coverLayer?.AddChild(sprite);
+
+            if (Engine.IsEditorHint())
+            {
+                var root = GetTree()?.EditedSceneRoot;
+                if (root != null) sprite.Owner = root;
+            }
+        }
+
+        private Vector2 CalculateScenePartPosition(ScenePart scenePart, TilePosition basePosition)
+        {
+            // Combine base position with scene part pixel location
+            var totalX = (int)basePosition.X + (scenePart.PixelLocation.X / 32.0f);
+            var totalY = (int)basePosition.Y + (scenePart.PixelLocation.Y / 16.0f);
+
+            // Use coordinate converter for isometric positioning
+            if (_cordConverter != null)
+            {
+                var worldPos = _cordConverter.Cell2World(
+                    new System.Drawing.Point((int)totalX, (int)totalY)
+                );
+                return new Vector2(worldPos.X, worldPos.Y);
+            }
+
+            // Fallback to simple isometric calculation
+            return new Vector2(totalX * 64, totalY * 32);
+        }
+
+        private Vector2 CalculateCoverPosition(Cover cover)
+        {
+            if (_cordConverter != null)
+            {
+                var worldPos = _cordConverter.Cell2World(
+                    new System.Drawing.Point((int)cover.Position.X, (int)cover.Position.Y)
+                );
+                return new Vector2(worldPos.X, worldPos.Y);
+            }
+
+            // Fallback to simple isometric calculation
+            return new Vector2((int)cover.Position.X * 64, (int)cover.Position.Y * 32);
+        }
+
+        private ImageTexture? LoadSceneTexture(string aniPath, string aniName)
+        {
+            try
+            {
+                // Construct full path to texture file
+                var texturePath = Path.Combine(_clientPath, aniPath, $"{aniName}.dds");
+                if (!File.Exists(texturePath))
                 {
-                    marker.Owner = GetTree()?.EditedSceneRoot;
+                    // Try alternative extensions
+                    texturePath = Path.Combine(_clientPath, aniPath, $"{aniName}.bmp");
+                    if (!File.Exists(texturePath))
+                    {
+                        texturePath = Path.Combine(_clientPath, aniPath, $"{aniName}.png");
+                        if (!File.Exists(texturePath))
+                        {
+                            GD.PrintErr($"Scene texture not found: {aniPath}/{aniName}");
+                            return null;
+                        }
+                    }
                 }
+
+                // Use TextureConverter for DDS files, direct loading for others
+                if (texturePath.EndsWith(".dds", StringComparison.OrdinalIgnoreCase))
+                {
+                    return TextureConverter.ConvertDDSToTexture(texturePath);
+                }
+                else
+                {
+                    var image = Image.LoadFromFile(texturePath);
+                    return image != null ? ImageTexture.CreateFromImage(image) : null;
+                }
+            }
+            catch (Exception ex)
+            {
+                GD.PrintErr($"Error loading scene texture {aniPath}/{aniName}: {ex.Message}");
+                return null;
+            }
+        }
+
+        private Vector2 CalculateYSortedPosition(Vector2 worldPosition, int elevationOffset = 0)
+        {
+            // In isometric view, Y-sorting works best when we adjust the Y coordinate
+            // to account for the object's depth in the world
+            var adjustedY = worldPosition.Y;
+
+            // Apply elevation offset (negative makes objects appear higher/behind)
+            if (elevationOffset != 0)
+            {
+                adjustedY -= elevationOffset;
+            }
+
+            // For proper Y-sorting in isometric view, we need to ensure objects
+            // further back (higher tile Y coordinates) have higher Y positions
+            return new Vector2(worldPosition.X, adjustedY);
+        }
+
+        private void CreateSceneLayerManagement()
+        {
+            // The objectLayer already exists with Y-sorting enabled
+            // We can create sub-layers if needed for better organization
+            if (_objectLayer == null) return;
+
+            // Create sublayers for different object types
+            var terrainObjectsLayer = new Node2D();
+            terrainObjectsLayer.Name = "TerrainObjects";
+            terrainObjectsLayer.YSortEnabled = true;
+            terrainObjectsLayer.ZIndex = 0;
+
+            var coverObjectsLayer = new Node2D();
+            coverObjectsLayer.Name = "CoverObjects";
+            coverObjectsLayer.YSortEnabled = true;
+            coverObjectsLayer.ZIndex = 1; // Covers render above terrain objects
+
+            var portalLayer = new Node2D();
+            portalLayer.Name = "Portals";
+            portalLayer.YSortEnabled = true;
+            portalLayer.ZIndex = 2; // Portals on top
+
+            _objectLayer.AddChild(terrainObjectsLayer);
+            _objectLayer.AddChild(coverObjectsLayer);
+            _objectLayer.AddChild(portalLayer);
+
+            if (Engine.IsEditorHint())
+            {
+                var root = GetTree()?.EditedSceneRoot;
+                if (root != null)
+                {
+                    terrainObjectsLayer.Owner = root;
+                    coverObjectsLayer.Owner = root;
+                    portalLayer.Owner = root;
+                }
+            }
+        }
+
+        private Node2D? GetSceneObjectsLayer()
+        {
+            return _objectLayer?.GetNode<Node2D>("TerrainObjects");
+        }
+
+        private Node2D? GetCoverObjectsLayer()
+        {
+            return _objectLayer?.GetNode<Node2D>("CoverObjects");
+        }
+
+        private Node2D? GetPortalLayer()
+        {
+            return _objectLayer?.GetNode<Node2D>("Portals");
+        }
+
+        private void CreateCoverMarker(Cover cover, Vector2 position)
+        {
+            var marker = new Marker2D();
+            marker.Name = $"Cover_{cover.AniName}_Marker";
+            marker.Position = CalculateYSortedPosition(position);
+
+            var coverLayer = GetCoverObjectsLayer() ?? _objectLayer;
+            coverLayer?.AddChild(marker);
+
+            if (Engine.IsEditorHint())
+            {
+                var root = GetTree()?.EditedSceneRoot;
+                if (root != null) marker.Owner = root;
             }
         }
 
