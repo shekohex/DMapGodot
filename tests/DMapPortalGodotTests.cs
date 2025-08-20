@@ -30,7 +30,7 @@ namespace DMapImporter.Tests
         {
             var corePortal = new Portal(new TilePosition(10, 20), 123);
             var converter = CreateTestConverter();
-            
+
             var portal = AutoFree(new DMapPortal(corePortal, converter))!;
 
             AssertThat(portal.PortalId).IsEqual(123u);
@@ -41,10 +41,10 @@ namespace DMapImporter.Tests
         public void PortalHasCorrectToolAttribute()
         {
             var portal = AutoFree(new DMapPortal())!;
-            
+
             var type = portal.GetType();
             var toolAttribute = type.GetCustomAttributes(typeof(Godot.ToolAttribute), false);
-            
+
             AssertThat(toolAttribute.Length).IsEqual(1);
         }
 
@@ -76,24 +76,24 @@ namespace DMapImporter.Tests
         public void PortalSetupCreatesRequiredChildren()
         {
             var portal = AutoFree(new DMapPortal())!;
-            
+
             // Add to scene tree to trigger _Ready
             var scene = AutoFree(new Node2D())!;
             scene.AddChild(portal);
-            
+
             // Portal should have sprite and collision shape
             AssertThat(portal.GetChildCount()).IsGreater(0);
-            
+
             // Try to find sprite and collision children (names may vary)
             Sprite2D? sprite = null;
             CollisionShape2D? collision = null;
-            
+
             foreach (Node child in portal.GetChildren())
             {
                 if (child is Sprite2D s) sprite = s;
                 if (child is CollisionShape2D c) collision = c;
             }
-            
+
             // At least one of these should exist after _Ready is called
             AssertThat(portal.GetChildCount()).IsGreaterEqual(1);
         }
@@ -102,11 +102,11 @@ namespace DMapImporter.Tests
         public void PortalMonitoringIsEnabled()
         {
             var portal = AutoFree(new DMapPortal())!;
-            
+
             // Add to scene tree to trigger _Ready
             var scene = AutoFree(new Node2D())!;
             scene.AddChild(portal);
-            
+
             AssertThat(portal.Monitoring).IsTrue();
         }
 
@@ -115,9 +115,9 @@ namespace DMapImporter.Tests
         {
             var corePortal = new Portal(new TilePosition(25, 25), 456);
             var converter = CreateTestConverter();
-            
+
             var portal = AutoFree(new DMapPortal(corePortal, converter))!;
-            
+
             // Position should be converted from tile coordinates
             AssertThat(portal.Position.X).IsNotEqual(0);
             AssertThat(portal.Position.Y).IsNotEqual(0);
@@ -127,7 +127,7 @@ namespace DMapImporter.Tests
         public void PortalPropertiesCanBeSet()
         {
             var portal = AutoFree(new DMapPortal())!;
-            
+
             portal.PortalId = 789u;
             portal.DestinationMap = "test_map.dmap";
             portal.DestinationPos = new Vector2I(50, 75);
@@ -141,7 +141,7 @@ namespace DMapImporter.Tests
         public void PortalInheritsFromArea2D()
         {
             var portal = AutoFree(new DMapPortal())!;
-            
+
             AssertThat(portal).IsInstanceOf<Area2D>();
         }
 

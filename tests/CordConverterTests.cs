@@ -16,7 +16,7 @@ namespace DMapImporter.Tests
             var dmapSize = new Size(100, 100);
             var backgroundSize = new Size(1024, 1024);
             var converter = new CordConverter(dmapSize, backgroundSize);
-            
+
             var cellPoint = new Point(cellX, cellY);
             var worldPoint = converter.Cell2World(cellPoint);
 
@@ -31,7 +31,7 @@ namespace DMapImporter.Tests
             var dmapSize = new Size(100, 100);
             var backgroundSize = new Size(1024, 1024);
             var converter = new CordConverter(dmapSize, backgroundSize);
-            
+
             var originalCell = new Point(originalCellX, originalCellY);
             var worldPoint = converter.Cell2World(originalCell);
             var convertedBackCell = converter.World2Cell(worldPoint);
@@ -46,9 +46,9 @@ namespace DMapImporter.Tests
             var dmapSize = new Size(100, 100);
             var backgroundSize = new Size(1024, 1024);
             var converter = new CordConverter(dmapSize, backgroundSize);
-            
+
             var bgPos = converter.GetBackgroundWorldPos();
-            
+
             // origin.X = 64 * (100/2) = 3200, origin.Y = 32/2 = 16
             // bgPos.X = 3200 - 1024/2 = 3200 - 512 = 2688
             // bgPos.Y = 16 + 32*100/2 - 1024/2 - ((100+1) % 2) * 16
@@ -63,10 +63,10 @@ namespace DMapImporter.Tests
             var dmapSize = new Size(100, 100);
             var backgroundSize = new Size(1024, 1024);
             var converter = new CordConverter(dmapSize, backgroundSize);
-            
+
             var cellPoint = new Point(50, 50);
             var bgPoint = converter.Cell2Bg(cellPoint);
-            
+
             AssertThat(bgPoint.X).IsGreaterEqual(0);
             AssertThat(bgPoint.Y).IsGreaterEqual(0);
         }

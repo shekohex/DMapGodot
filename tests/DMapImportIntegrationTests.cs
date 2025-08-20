@@ -170,7 +170,7 @@ namespace DMapImporter.Tests
         public void ImporterProcessesOptionsCorrectly()
         {
             var importer = AutoFree(new DMapImporter.Importers.DMapImporter())!;
-            
+
             // Create options with custom values
             var options = new Godot.Collections.Dictionary
             {
@@ -205,7 +205,7 @@ namespace DMapImporter.Tests
             // Test creating a minimal scene with DMapRenderer
             var scene = AutoFree(new Node2D())!;
             var renderer = AutoFree(new DMapRenderer())!;
-            
+
             scene.AddChild(renderer);
             scene.Name = "TestDMapScene";
             renderer.Name = "DMapRenderer";
@@ -220,10 +220,10 @@ namespace DMapImporter.Tests
         {
             var renderer = AutoFree(new DMapRenderer())!;
             var portal = AutoFree(new DMapPortal())!;
-            
+
             // Add portal as child of renderer
             renderer.AddChild(portal);
-            
+
             AssertThat(renderer.GetChildCount()).IsEqual(1);
             AssertThat(renderer.GetChild<DMapPortal>(0)).IsNotNull();
             AssertThat(portal.GetParent()).IsEqual(renderer);

@@ -84,11 +84,11 @@ namespace DMapImporter.Tests
         public void RendererHasCorrectToolAttribute()
         {
             var renderer = AutoFree(new DMapRenderer())!;
-            
+
             // Should be marked as [Tool] for editor functionality
             var type = renderer.GetType();
             var toolAttribute = type.GetCustomAttributes(typeof(Godot.ToolAttribute), false);
-            
+
             AssertThat(toolAttribute.Length).IsEqual(1);
         }
 
@@ -120,7 +120,7 @@ namespace DMapImporter.Tests
         public void RendererInheritsFromNode2D()
         {
             var renderer = AutoFree(new DMapRenderer())!;
-            
+
             AssertThat(renderer).IsInstanceOf<Node2D>();
         }
 
@@ -130,7 +130,7 @@ namespace DMapImporter.Tests
             var dmap = new DmapFile();
             dmap.DmapPath = "test.dmap";
             dmap.SizeTiles = new DMapImporter.Core.Utility.Size(100, 100);
-            
+
             // Initialize minimal required data
             dmap.TileSet = new Tile[100, 100];
             for (int x = 0; x < 100; x++)
