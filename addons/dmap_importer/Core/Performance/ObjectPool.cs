@@ -1,11 +1,15 @@
 using Godot;
 using System;
 using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
+using DMapImporter.Core.Logging;
 
 namespace DMapImporter.Core.Performance
 {
     public class ObjectPool<T> where T : CanvasItem, new()
     {
+        private static readonly ILogger _logger = DMapLoggerFactory.CreateLogger($"ObjectPool<{typeof(T).Name}>");
+        
         private readonly Stack<T> _pool = new();
         private readonly Node _parentNode;
         private readonly int _initialSize;
@@ -54,7 +58,7 @@ namespace DMapImporter.Core.Performance
             }
             
             // If we've reached max size and no objects available, create temporary one
-            GD.PrintErr($"ObjectPool<{typeof(T).Name}> reached maximum size ({_maxSize}). Creating temporary object.");
+            _logger.LogWarning("ObjectPool reached maximum size ({MaxSize}). Creating temporary object", _maxSize);
             return CreateNewItem();
         }
         

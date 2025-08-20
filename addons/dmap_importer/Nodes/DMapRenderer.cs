@@ -2,7 +2,9 @@ using Godot;
 using DMapImporter.Core.Dmap;
 using DMapImporter.Core.Utility;
 using DMapImporter.Core.Performance;
+using DMapImporter.Core.Logging;
 using DMapGodot.Importers;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Drawing;
 using System.IO;
@@ -49,6 +51,7 @@ namespace DMapImporter.Nodes
     [Tool]
     public partial class DMapRenderer : Node2D
     {
+        private static readonly ILogger<DMapRenderer> _logger = DMapLoggerFactory.CreateLogger<DMapRenderer>();
         [Export] public string DMapPath { get; set; } = string.Empty;
         [Export] public Vector2I MapSize { get; set; }
         [Export] public int TileSize { get; set; } = 32;
@@ -123,7 +126,7 @@ namespace DMapImporter.Nodes
                 // Create a default camera if none exists
                 _camera = new Camera2D();
                 GetParent()?.AddChild(_camera);
-                GD.Print("Created default Camera2D for DMapRenderer optimizations");
+                _logger.LogInformation("Created default Camera2D for DMapRenderer optimizations");
             }
             
             // Initialize performance components
@@ -155,22 +158,22 @@ namespace DMapImporter.Nodes
             
             if ((EnableLOD || EnableViewportCulling) && _camera == null)
             {
-                GD.Print("Warning: LOD or Viewport Culling enabled but no camera found. Creating default camera.");
+                _logger.LogWarning("LOD or Viewport Culling enabled but no camera found. Creating default camera");
             }
             
             if (EnableChunking && MapSize.X * MapSize.Y < 65536) // 256x256
             {
-                GD.Print("Warning: Chunking enabled for small map. Consider disabling for better performance.");
+                _logger.LogWarning("Chunking enabled for small map. Consider disabling for better performance");
             }
             
             if (EnableObjectPooling && !EnableChunking && !EnableViewportCulling)
             {
-                GD.Print("Warning: Object pooling most effective when combined with culling systems.");
+                _logger.LogWarning("Object pooling most effective when combined with culling systems");
             }
             
             if (ShowPerformanceStats && !EnableOptimizations)
             {
-                GD.Print("Warning: Performance stats enabled but optimizations disabled.");
+                _logger.LogWarning("Performance stats enabled but optimizations disabled");
             }
         }
         
@@ -254,7 +257,7 @@ namespace DMapImporter.Nodes
         {
             if (dmap == null)
             {
-                GD.PrintErr("Cannot load null DmapFile");
+                _logger.LogError("Cannot load null DmapFile");
                 return;
             }
 
@@ -469,7 +472,7 @@ namespace DMapImporter.Nodes
             }
             catch (Exception ex)
             {
-                GD.PrintErr($"Error extracting client path from {dmapPath}: {ex.Message}");
+                _logger.LogError(ex, "Error extracting client path from {DmapPath}", dmapPath);
             }
 
             return string.Empty;
@@ -516,7 +519,7 @@ namespace DMapImporter.Nodes
                 }
                 catch (Exception ex)
                 {
-                    GD.PrintErr($"Error rendering scene {terrainScene.SceneFile}: {ex.Message}");
+                    _logger.LogError(ex, "Error rendering scene {SceneFile}", terrainScene.SceneFile);
                 }
             }
         }
@@ -539,7 +542,7 @@ namespace DMapImporter.Nodes
             }
             catch (Exception ex)
             {
-                GD.PrintErr($"Failed to load scene file {sceneFilePath}: {ex.Message}");
+                _logger.LogError(ex, "Failed to load scene file {SceneFilePath}", sceneFilePath);
                 return null;
             }
         }
@@ -754,7 +757,7 @@ namespace DMapImporter.Nodes
                         texturePath = Path.Combine(_clientPath, aniPath, $"{aniName}.png");
                         if (!File.Exists(texturePath))
                         {
-                            GD.PrintErr($"Scene texture not found: {aniPath}/{aniName}");
+                            _logger.LogError("Scene texture not found: {AniPath}/{AniName}", aniPath, aniName);
                             return null;
                         }
                     }
@@ -773,7 +776,7 @@ namespace DMapImporter.Nodes
             }
             catch (Exception ex)
             {
-                GD.PrintErr($"Error loading scene texture {aniPath}/{aniName}: {ex.Message}");
+                _logger.LogError(ex, "Error loading scene texture {AniPath}/{AniName}", aniPath, aniName);
                 return null;
             }
         }

@@ -1,10 +1,14 @@
 using Godot;
 using System;
+using Microsoft.Extensions.Logging;
+using DMapImporter.Core.Logging;
 
 namespace DMapImporter.Core.Performance
 {
     public class ViewportCuller
     {
+        private static readonly ILogger<ViewportCuller> _logger = DMapLoggerFactory.CreateLogger<ViewportCuller>();
+        
         private Camera2D? _camera;
         private Rect2 _cullingBounds;
         private float _cullingMargin = 128.0f; // Extra margin to avoid pop-in
@@ -69,13 +73,13 @@ namespace DMapImporter.Core.Performance
             
             if (tileSize.X <= 0 || tileSize.Y <= 0)
             {
-                GD.PrintErr($"Invalid tile size: {tileSize}");
+                _logger.LogError("Invalid tile size: {TileSize}", tileSize);
                 return new Rect2I(0, 0, mapSize.X, mapSize.Y);
             }
             
             if (mapSize.X <= 0 || mapSize.Y <= 0)
             {
-                GD.PrintErr($"Invalid map size: {mapSize}");
+                _logger.LogError("Invalid map size: {MapSize}", mapSize);
                 return new Rect2I(0, 0, 1, 1);
             }
             

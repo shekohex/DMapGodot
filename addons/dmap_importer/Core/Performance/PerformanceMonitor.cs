@@ -2,6 +2,8 @@ using Godot;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using Microsoft.Extensions.Logging;
+using DMapImporter.Core.Logging;
 
 namespace DMapImporter.Core.Performance
 {
@@ -25,6 +27,8 @@ namespace DMapImporter.Core.Performance
     
     public class PerformanceMonitor : IDisposable
     {
+        private static readonly ILogger<PerformanceMonitor> _logger = DMapLoggerFactory.CreateLogger<PerformanceMonitor>();
+        
         private Stopwatch _frameTimer = new();
         private List<double> _frameHistory = new();
         private const int MAX_FRAME_HISTORY = 60; // Keep 1 second of history at 60fps
@@ -154,21 +158,24 @@ namespace DMapImporter.Core.Performance
         
         public void LogPerformanceReport()
         {
-            GD.Print($"=== Performance Report ===");
-            GD.Print($"FPS: Avg={GetAverageFPS():F1}, Min={GetMinFPS():F1}, Max={GetMaxFPS():F1}");
-            GD.Print($"Memory Usage: {CurrentStats.MemoryUsageMB} MB");
-            GD.Print($"Rendering: {CurrentStats.VisibleTiles} tiles, {CurrentStats.VisibleObjects} objects");
-            GD.Print($"Chunks: {CurrentStats.ActiveChunks} visible");
-            GD.Print($"Object Pool: {CurrentStats.PooledObjects} active");
+            _logger.LogInformation("=== Performance Report ===");
+            _logger.LogInformation("FPS: Avg={AvgFPS:F1}, Min={MinFPS:F1}, Max={MaxFPS:F1}", 
+                GetAverageFPS(), GetMinFPS(), GetMaxFPS());
+            _logger.LogInformation("Memory Usage: {MemoryUsageMB} MB", CurrentStats.MemoryUsageMB);
+            _logger.LogInformation("Rendering: {VisibleTiles} tiles, {VisibleObjects} objects", 
+                CurrentStats.VisibleTiles, CurrentStats.VisibleObjects);
+            _logger.LogInformation("Chunks: {ActiveChunks} visible", CurrentStats.ActiveChunks);
+            _logger.LogInformation("Object Pool: {PooledObjects} active", CurrentStats.PooledObjects);
             
             if (CurrentStats.LODDistribution.Count > 0)
             {
-                GD.Print($"LOD Distribution: High={CurrentStats.LODDistribution.GetValueOrDefault(LODLevel.High)}, " +
-                        $"Medium={CurrentStats.LODDistribution.GetValueOrDefault(LODLevel.Medium)}, " +
-                        $"Low={CurrentStats.LODDistribution.GetValueOrDefault(LODLevel.Low)}, " +
-                        $"Hidden={CurrentStats.LODDistribution.GetValueOrDefault(LODLevel.Hidden)}");
+                _logger.LogInformation("LOD Distribution: High={High}, Medium={Medium}, Low={Low}, Hidden={Hidden}", 
+                    CurrentStats.LODDistribution.GetValueOrDefault(LODLevel.High),
+                    CurrentStats.LODDistribution.GetValueOrDefault(LODLevel.Medium),
+                    CurrentStats.LODDistribution.GetValueOrDefault(LODLevel.Low),
+                    CurrentStats.LODDistribution.GetValueOrDefault(LODLevel.Hidden));
             }
-            GD.Print($"========================");
+            _logger.LogInformation("========================");
         }
         
         public bool MeetsPerformanceTargets()

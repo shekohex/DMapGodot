@@ -96,7 +96,29 @@ private bool CheckCameraChanged()
 
 ## Code Quality Improvements
 
-### 1. Exception Safety
+### 1. Proper Logging Infrastructure
+**Issue**: Direct use of `GD.Print` and `GD.PrintErr` for logging
+**Solution**: Integrated with project's `DMapLoggerFactory` and `ILogger<T>` system
+
+```csharp
+private static readonly ILogger<ViewportCuller> _logger = DMapLoggerFactory.CreateLogger<ViewportCuller>();
+
+// Structured logging with parameters
+_logger.LogError("Invalid texture size {Size} for {TexturePath}. Must be > 0 and <= {AtlasSize}", 
+    size, texturePath, ATLAS_SIZE);
+
+// Exception logging with context
+_logger.LogError(ex, "Error loading scene texture {AniPath}/{AniName}", aniPath, aniName);
+```
+
+**Benefits**:
+- Structured logging with parameters for better searchability
+- Proper log levels (Error, Warning, Information)
+- Exception context preservation
+- Integration with existing logging infrastructure
+- Configurable log output (file, console, Godot editor)
+
+### 2. Exception Safety
 **Enhancements**:
 - Added null checks with `ArgumentNullException` for critical parameters
 - Implemented try-catch blocks around potentially failing operations
@@ -141,12 +163,14 @@ AssertThat(atlas.AddTexture("test4.png", texture1)).IsFalse();
 - Path validation: None (security risk)
 - Resource cleanup: Manual/inconsistent
 - Error handling: Silent failures
+- Logging: Direct `GD.Print` calls without structure
 
 ### After Improvements  
 - Frame updates: Only when camera moves (30-50% CPU reduction)
 - Path validation: Comprehensive sanitization
 - Resource cleanup: Automatic via `IDisposable`
 - Error handling: Descriptive errors and warnings
+- Logging: Structured logging with `ILogger<T>` and proper log levels
 
 ## Security Risk Assessment
 

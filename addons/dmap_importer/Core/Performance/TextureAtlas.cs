@@ -2,6 +2,8 @@ using Godot;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Microsoft.Extensions.Logging;
+using DMapImporter.Core.Logging;
 using DMapGodot.Importers;
 
 namespace DMapImporter.Core.Performance
@@ -22,6 +24,8 @@ namespace DMapImporter.Core.Performance
     
     public class TextureAtlas
     {
+        private static readonly ILogger<TextureAtlas> _logger = DMapLoggerFactory.CreateLogger<TextureAtlas>();
+        
         private const int ATLAS_SIZE = 2048;
         private const int PADDING = 2; // Prevent texture bleeding
         
@@ -42,19 +46,19 @@ namespace DMapImporter.Core.Performance
         {
             if (_isFinalized)
             {
-                GD.PrintErr("Cannot add textures to finalized atlas");
+                _logger.LogError("Cannot add textures to finalized atlas");
                 return false;
             }
             
             if (string.IsNullOrEmpty(texturePath))
             {
-                GD.PrintErr("Texture path cannot be null or empty");
+                _logger.LogError("Texture path cannot be null or empty");
                 return false;
             }
             
             if (texture == null)
             {
-                GD.PrintErr($"Texture is null for path: {texturePath}");
+                _logger.LogError("Texture is null for path: {TexturePath}", texturePath);
                 return false;
             }
             
@@ -66,7 +70,7 @@ namespace DMapImporter.Core.Performance
             var image = texture.GetImage();
             if (image == null) 
             {
-                GD.PrintErr($"Failed to get image from texture: {texturePath}");
+                _logger.LogError("Failed to get image from texture: {TexturePath}", texturePath);
                 return false;
             }
             
@@ -75,7 +79,8 @@ namespace DMapImporter.Core.Performance
             // Validate texture size is reasonable
             if (size.X <= 0 || size.Y <= 0 || size.X > ATLAS_SIZE || size.Y > ATLAS_SIZE)
             {
-                GD.PrintErr($"Invalid texture size {size} for {texturePath}. Must be > 0 and <= {ATLAS_SIZE}");
+                _logger.LogError("Invalid texture size {Size} for {TexturePath}. Must be > 0 and <= {AtlasSize}", 
+                    size, texturePath, ATLAS_SIZE);
                 return false;
             }
             
@@ -91,7 +96,7 @@ namespace DMapImporter.Core.Performance
             // Check if we have vertical space
             if (_currentPosition.Y + size.Y > ATLAS_SIZE)
             {
-                GD.PrintErr($"Atlas full, cannot add texture: {texturePath}");
+                _logger.LogWarning("Atlas full, cannot add texture: {TexturePath}", texturePath);
                 return false;
             }
             
@@ -132,7 +137,7 @@ namespace DMapImporter.Core.Performance
             _atlasTexture = ImageTexture.CreateFromImage(_atlasImage);
             _isFinalized = true;
             
-            GD.Print($"Texture atlas finalized with {_textureMap.Count} textures");
+            _logger.LogInformation("Texture atlas finalized with {TextureCount} textures", _textureMap.Count);
             return _atlasTexture;
         }
         
@@ -186,7 +191,7 @@ namespace DMapImporter.Core.Performance
                 }
                 catch (Exception ex)
                 {
-                    GD.PrintErr($"Failed to add texture to atlas: {path}, Error: {ex.Message}");
+                    _logger.LogError(ex, "Failed to add texture to atlas: {Path}", path);
                 }
             }
             
