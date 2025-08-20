@@ -1,6 +1,24 @@
-<Project Sdk="Godot.NET.Sdk/4.4.1">
+<Project Sdk="Godot.NET.Sdk/4.4.0">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <EnableDynamicLoading>true</EnableDynamicLoading>
+    <RootNamespace>DMapImporter</RootNamespace>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SharpCompress" Version="0.38.0" />
+    <PackageReference Include="BCnEncoder.Net" Version="2.1.0" />
+    <!-- Testing -->
+    <PackageReference Include="gdUnit4.api" Version="5.0.0" />
+    <PackageReference Include="gdUnit4.test.adapter" Version="3.0.0" />
+    <PackageReference Include="gdUnit4.analyzers" Version="1.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Exclude Tiled2Dmap directory from build for now -->
+    <Compile Remove="Tiled2Dmap/**/*.cs" />
+  </ItemGroup>
 </Project>
