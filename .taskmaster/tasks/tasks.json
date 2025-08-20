@@ -538,7 +538,7 @@
         "id": 9,
         "title": "Implement Portal System",
         "description": "Create interactive portal nodes for map transitions based on Portal.cs data, implementing comprehensive portal system with Area2D inheritance, Export properties, and map transition functionality as specified in PRD Phase 5 Section 8.2 (lines 462-497)",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           5
         ],
@@ -550,7 +550,7 @@
             "id": 1,
             "title": "Create DMapPortal class structure",
             "description": "Create DMapPortal.cs extending Area2D with Export properties",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "details": "Create file in addons/dmap_importer/Nodes/DMapPortal.cs. Implement class extending Area2D with [Export] properties: uint PortalId, string DestinationMap, Vector2I DestinationPos. Add proper using statements for Godot namespace.",
             "testStrategy": ""
@@ -559,7 +559,7 @@
             "id": 2,
             "title": "Implement visual components",
             "description": "Add Sprite2D and CollisionShape2D children with proper configuration",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "details": "In _Ready() method, create Sprite2D child with portal icon texture (res://addons/dmap_importer/icons/portal.png). Create CollisionShape2D child with CircleShape2D resource, set radius to 32px for interaction area.",
             "testStrategy": ""
@@ -568,7 +568,7 @@
             "id": 3,
             "title": "Implement interaction logic",
             "description": "Handle BodyEntered signal for player detection and map transitions",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "details": "Connect BodyEntered signal to handler method in _Ready(). Implement signal handler to check if entering body is in 'player' group. On valid player, call GetTree().ChangeSceneToFile() with scene path format: res://maps/{DestinationMap}.tscn",
             "testStrategy": ""
@@ -577,7 +577,7 @@
             "id": 4,
             "title": "Implement portal positioning system",
             "description": "Add positioning logic using CordConverter for tile-to-world conversion",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "details": "Create SetPortalPosition() method that takes Portal.Position (TilePosition with X,Y uint properties) and uses CordConverter.TileToWorld() to convert to Godot world coordinates. Set Area2D.Position property accordingly.",
             "testStrategy": ""
@@ -586,7 +586,7 @@
             "id": 5,
             "title": "Add Portal.cs integration",
             "description": "Ensure compatibility with original Portal data structure",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "details": "Reference Portal.cs from Tiled2Dmap/Dmap/ directory. Ensure PortalId property maps correctly to Portal.Id. Add constructor or initialization method that accepts Portal struct and sets properties accordingly.",
             "testStrategy": ""
@@ -595,7 +595,7 @@
             "id": 6,
             "title": "Create portal icon resource",
             "description": "Add portal icon texture at specified path",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "details": "Create or obtain portal icon texture and place at res://addons/dmap_importer/icons/portal.png. Ensure texture is appropriate size and style for portal visualization in game.",
             "testStrategy": ""
@@ -987,7 +987,7 @@
     ],
     "metadata": {
       "created": "2025-08-19T22:29:59.765Z",
-      "updated": "2025-08-20T12:51:12.182Z",
+      "updated": "2025-08-20T13:46:52.724Z",
       "description": "Tasks for master context"
     }
   }

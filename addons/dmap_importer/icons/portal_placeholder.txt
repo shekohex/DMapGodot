@@ -1,0 +1,8 @@
+# Portal Icon Placeholder
+
+This directory should contain:
+- portal.png (64x64 pixel portal icon)
+- portal.png.import (Godot import settings)
+
+The icon should be a recognizable portal symbol that contrasts well with map backgrounds.
+For now, the system will work without the icon, but the visual component won't display.

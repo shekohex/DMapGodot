@@ -54,6 +54,7 @@ namespace DMapImporter.Nodes
         private TileMapLayer? _terrainLayer;
         private Node2D? _objectLayer;
         private CoordinateHelper? _coordinateHelper;
+        private CordConverter? _cordConverter;
 
         public override void _Ready()
         {
@@ -77,6 +78,14 @@ namespace DMapImporter.Nodes
 
             // Initialize coordinate helper
             _coordinateHelper = new CoordinateHelper(dmap);
+
+            // Initialize CordConverter for portals
+            var dmapSize = new System.Drawing.Size(
+                (int)dmap.SizeTiles.Width,
+                (int)dmap.SizeTiles.Height
+            );
+            var bgSize = new System.Drawing.Size(256, 256);
+            _cordConverter = new CordConverter(dmapSize, bgSize);
 
             ClearChildren();
             CreateLayers();
@@ -203,22 +212,17 @@ namespace DMapImporter.Nodes
 
         private void PlaceObjectMarkers()
         {
-            if (_dmapFile == null || _objectLayer == null) return;
+            if (_dmapFile == null || _objectLayer == null || _cordConverter == null) return;
 
-            // Place simple markers for portals
+            // Place DMapPortal nodes for portals
             foreach (var portal in _dmapFile.Portals)
             {
-                var marker = new Marker2D();
-                marker.Name = $"Portal_{portal.Id}";
-                marker.Position = new Vector2(
-                    portal.Position.X * 64,
-                    portal.Position.Y * 32
-                );
-                _objectLayer.AddChild(marker);
+                var portalNode = new DMapPortal(portal, _cordConverter);
+                _objectLayer.AddChild(portalNode);
 
                 if (Engine.IsEditorHint())
                 {
-                    marker.Owner = GetTree()?.EditedSceneRoot;
+                    portalNode.Owner = GetTree()?.EditedSceneRoot;
                 }
             }
 
