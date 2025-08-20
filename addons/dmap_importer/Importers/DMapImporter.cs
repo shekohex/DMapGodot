@@ -1,6 +1,7 @@
 #if TOOLS
 using Godot;
 using DMapImporter.Core.Dmap;
+using DMapImporter.Core.Utility;
 using DMapImporter.Nodes;
 using System;
 using System.IO;
@@ -151,12 +152,12 @@ namespace DMapImporter.Importers
         {
             try
             {
-                GD.Print($"[DMapImporter] Starting import of: {sourceFile}");
+                Log.Info($"DMapImporter: Starting import of: {sourceFile}");
                 
                 // Validate source file exists
                 if (!File.Exists(sourceFile))
                 {
-                    GD.PrintErr($"[DMapImporter] Source file not found: {sourceFile}");
+                    Log.Error($"DMapImporter: Source file not found: {sourceFile}");
                     return Error.FileNotFound;
                 }
                 
@@ -169,18 +170,18 @@ namespace DMapImporter.Importers
                 float textureQuality = options.ContainsKey("texture_quality") ? options["texture_quality"].AsSingle() : 0.8f;
                 bool enableCompression = options.ContainsKey("enable_compression") ? options["enable_compression"].AsBool() : true;
                 
-                GD.Print($"[DMapImporter] Import options - TileSize: {tileSize}, Terrain: {enableTerrain}, Portals: {enablePortals}, Objects: {enableObjects}");
+                Log.Debug($"DMapImporter: Import options - TileSize: {tileSize}, Terrain: {enableTerrain}, Portals: {enablePortals}, Objects: {enableObjects}");
                 
                 // Load DMAP file using existing parser
                 DmapFile dmap;
                 try
                 {
                     dmap = new DmapFile(sourceFile);
-                    GD.Print($"[DMapImporter] Successfully loaded DMAP: {dmap.DmapName}, Size: {dmap.SizeTiles.Width}x{dmap.SizeTiles.Height}");
+                    Log.Info($"DMapImporter: Successfully loaded DMAP: {dmap.DmapName}, Size: {dmap.SizeTiles.Width}x{dmap.SizeTiles.Height}");
                 }
                 catch (Exception ex)
                 {
-                    GD.PrintErr($"[DMapImporter] Failed to load DMAP file: {ex.Message}");
+                    Log.Error($"DMapImporter: Failed to load DMAP file", ex);
                     return Error.ParseError;
                 }
                 
@@ -193,11 +194,11 @@ namespace DMapImporter.Importers
                 try
                 {
                     renderer.LoadFromDMap(dmap);
-                    GD.Print($"[DMapImporter] Successfully populated renderer with DMAP data");
+                    Log.Debug($"DMapImporter: Successfully populated renderer with DMAP data");
                 }
                 catch (Exception ex)
                 {
-                    GD.PrintErr($"[DMapImporter] Failed to populate renderer: {ex.Message}");
+                    Log.Error($"DMapImporter: Failed to populate renderer", ex);
                     renderer?.QueueFree();
                     return Error.CantCreate;
                 }
@@ -209,15 +210,15 @@ namespace DMapImporter.Importers
                     var result = packedScene.Pack(renderer);
                     if (result != Error.Ok)
                     {
-                        GD.PrintErr($"[DMapImporter] Failed to pack scene: {result}");
+                        Log.Error($"DMapImporter: Failed to pack scene: {result}");
                         renderer?.QueueFree();
                         return result;
                     }
-                    GD.Print("[DMapImporter] Successfully packed scene");
+                    Log.Debug("DMapImporter: Successfully packed scene");
                 }
                 catch (Exception ex)
                 {
-                    GD.PrintErr($"[DMapImporter] Exception while packing scene: {ex.Message}");
+                    Log.Error($"DMapImporter: Exception while packing scene", ex);
                     renderer?.QueueFree();
                     return Error.CantCreate;
                 }
@@ -229,27 +230,26 @@ namespace DMapImporter.Importers
                     var saveResult = ResourceSaver.Save(packedScene, outputPath);
                     if (saveResult != Error.Ok)
                     {
-                        GD.PrintErr($"[DMapImporter] Failed to save PackedScene: {saveResult}");
+                        Log.Error($"DMapImporter: Failed to save PackedScene: {saveResult}");
                         return saveResult;
                     }
-                    GD.Print($"[DMapImporter] Successfully saved PackedScene to: {outputPath}");
+                    Log.Info($"DMapImporter: Successfully saved PackedScene to: {outputPath}");
                 }
                 catch (Exception ex)
                 {
-                    GD.PrintErr($"[DMapImporter] Exception while saving PackedScene: {ex.Message}");
+                    Log.Error($"DMapImporter: Exception while saving PackedScene", ex);
                     return Error.FileCantWrite;
                 }
                 
                 // Clean up temporary nodes
                 renderer?.QueueFree();
                 
-                GD.Print($"[DMapImporter] Import completed successfully");
+                Log.Info($"DMapImporter: Import completed successfully");
                 return Error.Ok;
             }
             catch (Exception ex)
             {
-                GD.PrintErr($"[DMapImporter] Unexpected error during import: {ex.Message}");
-                GD.PrintErr($"[DMapImporter] Stack trace: {ex.StackTrace}");
+                Log.Error($"DMapImporter: Unexpected error during import", ex);
                 return Error.Failed;
             }
         }

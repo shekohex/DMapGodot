@@ -2,6 +2,7 @@
 using Godot;
 using System;
 using DMapImporter.Importers;
+using DMapImporter.Core.Utility;
 
 [Tool]
 public partial class DMapImporterPlugin : EditorPlugin
@@ -12,7 +13,7 @@ public partial class DMapImporterPlugin : EditorPlugin
 	{
 		_dmapImporter = new DMapImporter.Importers.DMapImporter();
 		AddImportPlugin(_dmapImporter);
-		GD.Print("[DMapImporterPlugin] DMAP Importer plugin registered");
+		Log.Info("DMapImporterPlugin: DMAP Importer plugin registered");
 	}
 
 	public override void _ExitTree()
@@ -21,7 +22,7 @@ public partial class DMapImporterPlugin : EditorPlugin
 		{
 			RemoveImportPlugin(_dmapImporter);
 			_dmapImporter = null;
-			GD.Print("[DMapImporterPlugin] DMAP Importer plugin unregistered");
+			Log.Info("DMapImporterPlugin: DMAP Importer plugin unregistered");
 		}
 	}
 }
