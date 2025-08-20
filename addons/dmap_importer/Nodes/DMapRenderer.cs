@@ -256,7 +256,9 @@ namespace DMapImporter.Nodes
 
         private Vector2I _selectedTile = new Vector2I(-1, -1);
         private System.Collections.Generic.HashSet<Vector2I> _selectedTiles = new System.Collections.Generic.HashSet<Vector2I>();
+        private System.Collections.Generic.HashSet<Vector2I> _previousSelectedTiles = new System.Collections.Generic.HashSet<Vector2I>();
         private TileMapLayer? _selectionLayer;
+        private static Texture2D? _cachedSelectionTexture;
 
         private void CreateSelectionLayer()
         {
@@ -264,23 +266,23 @@ namespace DMapImporter.Nodes
             _selectionLayer.Name = "SelectionLayer";
             _selectionLayer.ZIndex = 10;
             _selectionLayer.Enabled = true;
-            
+
             // Create a simple selection tileset
             var selectionTileSet = new TileSet();
             selectionTileSet.TileShape = TileSet.TileShapeEnum.Isometric;
             selectionTileSet.TileSize = new Vector2I(64, 32);
             selectionTileSet.TileLayout = TileSet.TileLayoutEnum.Stacked;
-            
+
             var source = new TileSetAtlasSource();
             source.Texture = CreateSelectionTexture();
             source.TextureRegionSize = new Vector2I(64, 32);
             source.CreateTile(Vector2I.Zero, new Vector2I(1, 1));
-            
+
             selectionTileSet.AddSource(source);
             _selectionLayer.TileSet = selectionTileSet;
-            
+
             AddChild(_selectionLayer);
-            
+
             if (Engine.IsEditorHint())
             {
                 var root = GetTree()?.EditedSceneRoot;
@@ -291,21 +293,24 @@ namespace DMapImporter.Nodes
             }
         }
 
-        private Texture2D CreateSelectionTexture()
+        private static Texture2D CreateSelectionTexture()
         {
-            // Create a simple selection texture
+            if (_cachedSelectionTexture != null)
+                return _cachedSelectionTexture;
+
+            // Create a simple selection texture - cached for performance
             var image = Image.CreateEmpty(64, 32, false, Image.Format.Rgba8);
             image.Fill(new Godot.Color(1, 1, 0, 0.5f)); // Yellow with transparency
-            
-            var texture = ImageTexture.CreateFromImage(image);
-            return texture;
+
+            _cachedSelectionTexture = ImageTexture.CreateFromImage(image);
+            return _cachedSelectionTexture;
         }
 
         public override void _UnhandledInput(InputEvent @event)
         {
             if (!Engine.IsEditorHint())
                 return;
-            
+
             if (@event is InputEventMouseButton mouseButton)
             {
                 if (mouseButton.Pressed && mouseButton.ButtonIndex == MouseButton.Left)
@@ -313,7 +318,7 @@ namespace DMapImporter.Nodes
                     var globalPos = mouseButton.GlobalPosition;
                     var localPos = ToLocal(globalPos);
                     var tileCoords = GetTileFromPosition(localPos);
-                    
+
                     if (IsValidTileCoordinate(tileCoords))
                     {
                         SelectTile(tileCoords);
@@ -328,13 +333,13 @@ namespace DMapImporter.Nodes
             {
                 return _terrainLayer.LocalToMap(localPos);
             }
-            
+
             // Fallback to coordinate helper
             if (_coordinateHelper != null)
             {
                 return _coordinateHelper.LocalToTile(localPos);
             }
-            
+
             return new Vector2I(-1, -1);
         }
 
@@ -343,59 +348,106 @@ namespace DMapImporter.Nodes
             _selectedTile = tileCoords;
             _selectedTiles.Clear();
             _selectedTiles.Add(tileCoords);
-            
+
             var tileData = GetTileData(tileCoords);
             if (tileData.HasValue)
             {
                 var tile = tileData.Value;
                 EmitSignal(SignalName.TileSelected, tileCoords, tile.Height, tile.Surface, tile.NoAccess);
             }
-            
+
             UpdateSelectionVisual();
         }
 
         private void UpdateSelectionVisual()
         {
-            if (_selectionLayer != null)
+            if (_selectionLayer == null)
+                return;
+
+            // Efficient update: only modify changed tiles
+            var tilesToRemove = new System.Collections.Generic.HashSet<Vector2I>(_previousSelectedTiles);
+            tilesToRemove.ExceptWith(_selectedTiles);
+
+            var tilesToAdd = new System.Collections.Generic.HashSet<Vector2I>(_selectedTiles);
+            tilesToAdd.ExceptWith(_previousSelectedTiles);
+
+            // Remove deselected tiles
+            foreach (var tile in tilesToRemove)
             {
-                _selectionLayer.Clear();
-                
-                foreach (var tile in _selectedTiles)
-                {
-                    _selectionLayer.SetCell(tile, 0, Vector2I.Zero);
-                }
+                _selectionLayer.EraseCell(tile);
             }
+
+            // Add newly selected tiles
+            foreach (var tile in tilesToAdd)
+            {
+                _selectionLayer.SetCell(tile, 0, Vector2I.Zero);
+            }
+
+            // Update previous selection cache
+            _previousSelectedTiles.Clear();
+            _previousSelectedTiles.UnionWith(_selectedTiles);
         }
 
-        public void UpdateTileProperty(Vector2I tileCoords, string property, object value)
+        public void UpdateTileProperty(Vector2I tileCoords, TileProperty property, object value)
         {
             if (_dmapFile == null || !IsValidTileCoordinate(tileCoords))
                 return;
-            
-            var tile = _dmapFile.TileSet[tileCoords.X, tileCoords.Y];
-            
-            switch (property)
+
+            // Validate property value before applying
+            if (!property.IsValidValue(value))
             {
-                case "height":
-                    tile = new Tile(tile.NoAccess, tile.Surface, (short)value);
-                    break;
-                case "surface":
-                    tile = new Tile(tile.NoAccess, (ushort)value, tile.Height);
-                    break;
-                case "no_access":
-                    tile = new Tile((ushort)value, tile.Surface, tile.Height);
-                    break;
+                GD.PrintErr($"Invalid value {value} for property {property}");
+                return;
             }
-            
-            _dmapFile.TileSet[tileCoords.X, tileCoords.Y] = tile;
-            RefreshTileVisual(tileCoords);
+
+            var tile = _dmapFile.TileSet[tileCoords.X, tileCoords.Y];
+
+            try
+            {
+                switch (property)
+                {
+                    case TileProperty.Height:
+                        tile = new Tile(tile.NoAccess, tile.Surface, System.Convert.ToInt16(value));
+                        break;
+                    case TileProperty.Surface:
+                        tile = new Tile(tile.NoAccess, System.Convert.ToUInt16(value), tile.Height);
+                        break;
+                    case TileProperty.NoAccess:
+                        tile = new Tile(System.Convert.ToUInt16(value), tile.Surface, tile.Height);
+                        break;
+                    default:
+                        GD.PrintErr($"Unknown tile property: {property}");
+                        return;
+                }
+
+                _dmapFile.TileSet[tileCoords.X, tileCoords.Y] = tile;
+                RefreshTileVisual(tileCoords);
+            }
+            catch (System.Exception ex)
+            {
+                GD.PrintErr($"Error updating tile property {property}: {ex.Message}");
+            }
+        }
+
+        // Backwards compatibility overload
+        public void UpdateTileProperty(Vector2I tileCoords, string property, object value)
+        {
+            try
+            {
+                var tileProperty = TilePropertyExtensions.FromPropertyString(property);
+                UpdateTileProperty(tileCoords, tileProperty, value);
+            }
+            catch (System.ArgumentException ex)
+            {
+                GD.PrintErr($"Invalid property name '{property}': {ex.Message}");
+            }
         }
 
         public Tile? GetTileData(Vector2I tileCoords)
         {
             if (_dmapFile == null || !IsValidTileCoordinate(tileCoords))
                 return null;
-            
+
             return _dmapFile.TileSet[tileCoords.X, tileCoords.Y];
         }
 

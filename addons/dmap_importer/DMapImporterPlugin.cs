@@ -12,6 +12,7 @@ public partial class DMapImporterPlugin : EditorPlugin
     private DMapImporter.Importers.DMapImporter? _dmapImporter;
     private DMapEditorDock? _editorDock;
     private readonly ILogger<DMapImporterPlugin> _logger;
+    private System.Action? _selectionChangedCallback;
 
     public DMapImporterPlugin()
     {
@@ -48,16 +49,18 @@ public partial class DMapImporterPlugin : EditorPlugin
 
         // Connect to scene changes to update dock
         var editorSelection = EditorInterface.Singleton.GetSelection();
-        editorSelection.SelectionChanged += OnSelectionChanged;
+        _selectionChangedCallback = OnSelectionChanged;
+        editorSelection.SelectionChanged += _selectionChangedCallback;
     }
 
     public override void _ExitTree()
     {
-        // Disconnect selection changes
-        var editorSelection = EditorInterface.Singleton.GetSelection();
-        if (editorSelection.IsConnected("selection_changed", new Callable(this, nameof(OnSelectionChanged))))
+        // Disconnect selection changes using stored callback
+        if (_selectionChangedCallback != null)
         {
-            editorSelection.SelectionChanged -= OnSelectionChanged;
+            var editorSelection = EditorInterface.Singleton.GetSelection();
+            editorSelection.SelectionChanged -= _selectionChangedCallback;
+            _selectionChangedCallback = null;
         }
 
         // Remove editor dock
@@ -86,9 +89,9 @@ public partial class DMapImporterPlugin : EditorPlugin
         // Update dock when selection changes
         var selection = EditorInterface.Singleton.GetSelection();
         var selectedNodes = selection.GetSelectedNodes();
-        
+
         DMapRenderer? renderer = null;
-        
+
         foreach (Node node in selectedNodes)
         {
             if (node is DMapRenderer dmapRenderer)
@@ -97,7 +100,7 @@ public partial class DMapImporterPlugin : EditorPlugin
                 break;
             }
         }
-        
+
         _editorDock?.SetCurrentRenderer(renderer);
     }
 }
