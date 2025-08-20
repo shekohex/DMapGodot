@@ -19,7 +19,7 @@ namespace DMapImporter.Tests
         {
             _tempDir = Path.Combine(Path.GetTempPath(), $"DMapTest_{Guid.NewGuid():N}");
             Directory.CreateDirectory(_tempDir);
-            
+
             _testSceneFile = Path.Combine(_tempDir, "test_scene.scene");
             CreateTestSceneFile();
         }
@@ -87,7 +87,7 @@ namespace DMapImporter.Tests
             AssertThat(scenePart.Tiles[0, 0].NoAccess).IsEqual(1u);
             AssertThat(scenePart.Tiles[0, 0].Surface).IsEqual(2u);
             AssertThat(scenePart.Tiles[0, 0].Height).IsEqual(100);
-            
+
             AssertThat(scenePart.Tiles[1, 1].NoAccess).IsEqual(0u);
             AssertThat(scenePart.Tiles[1, 1].Surface).IsEqual(5u);
             AssertThat(scenePart.Tiles[1, 1].Height).IsEqual(150);

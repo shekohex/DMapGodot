@@ -106,7 +106,7 @@ namespace DMapImporter.Tests
             renderer.LoadFromDMap(dmapFile);
 
             AssertThat(renderer.GetChildCount()).IsGreaterEqual(0);
-            
+
             var hasPortals = false;
             for (int i = 0; i < renderer.GetChildCount(); i++)
             {
@@ -153,7 +153,7 @@ namespace DMapImporter.Tests
             AssertThat(File.Exists(mapFile)).IsTrue();
 
             var initialMemory = GC.GetTotalMemory(true);
-            
+
             var dmapFile = new DmapFile(mapFile);
             var renderer = AutoFree(new DMapRenderer())!;
             renderer.LoadFromDMap(dmapFile);

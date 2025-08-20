@@ -29,7 +29,7 @@ namespace DMapImporter.Tests
 
             var objectLayer = renderer.GetChild(2) as Node2D;
             AssertThat(objectLayer).IsNotNull();
-            AssertThat(objectLayer.Name).IsEqual("ObjectLayer");
+            AssertThat(objectLayer!.Name).IsEqual("ObjectLayer");
 
             var portalCount = 0;
             foreach (Node child in objectLayer.GetChildren())
@@ -73,7 +73,7 @@ namespace DMapImporter.Tests
             AssertThat(objectLayer).IsNotNull();
 
             var portalNodes = new System.Collections.Generic.List<DMapPortal>();
-            foreach (Node child in objectLayer.GetChildren())
+            foreach (Node child in objectLayer!.GetChildren())
             {
                 if (child is DMapPortal portal)
                 {
@@ -103,14 +103,14 @@ namespace DMapImporter.Tests
             renderer.LoadFromDMap(dmapFile);
 
             var objectLayer = renderer.GetChild(2) as Node2D;
-            var portalNode = objectLayer.GetChildren().OfType<DMapPortal>().FirstOrDefault();
+            var portalNode = objectLayer!.GetChildren().OfType<DMapPortal>().FirstOrDefault();
 
             AssertThat(portalNode).IsNotNull();
 
             var converter = new CordConverter(new System.Drawing.Size(100, 100), new System.Drawing.Size(256, 256));
             var expectedWorldPos = converter.Cell2World(new Point(25, 35));
 
-            AssertThat(portalNode.Position.X).IsEqual(expectedWorldPos.X);
+            AssertThat(portalNode!.Position.X).IsEqual(expectedWorldPos.X);
             AssertThat(portalNode.Position.Y).IsEqual(expectedWorldPos.Y);
         }
 

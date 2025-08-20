@@ -31,14 +31,14 @@ namespace DMapImporter.Tests
         {
             var mapFile = Path.Combine(_mapPath, "smith.DMap");
             var stopwatch = Stopwatch.StartNew();
-            
+
             var dmapFile = new DmapFile(mapFile);
-            
+
             stopwatch.Stop();
             var loadTimeMs = stopwatch.ElapsedMilliseconds;
 
             AssertThat(loadTimeMs).IsLess(500);
-            
+
             GD.Print($"Small map (smith.DMap) loaded in {loadTimeMs}ms (target: <500ms)");
         }
 
@@ -47,14 +47,14 @@ namespace DMapImporter.Tests
         {
             var mapFile = Path.Combine(_mapPath, "arena.DMap");
             var stopwatch = Stopwatch.StartNew();
-            
+
             var dmapFile = new DmapFile(mapFile);
-            
+
             stopwatch.Stop();
             var loadTimeMs = stopwatch.ElapsedMilliseconds;
 
             AssertThat(loadTimeMs).IsLess(2000);
-            
+
             GD.Print($"Medium map (arena.DMap) loaded in {loadTimeMs}ms (target: <2000ms)");
         }
 
@@ -69,14 +69,14 @@ namespace DMapImporter.Tests
             }
 
             var stopwatch = Stopwatch.StartNew();
-            
+
             var dmapFile = new DmapFile(mapFile);
-            
+
             stopwatch.Stop();
             var loadTimeMs = stopwatch.ElapsedMilliseconds;
 
             AssertThat(loadTimeMs).IsLess(10000);
-            
+
             GD.Print($"Large map (Gulf.DMap) loaded in {loadTimeMs}ms (target: <10000ms)");
         }
 
@@ -88,14 +88,14 @@ namespace DMapImporter.Tests
             var dmapFile = new DmapFile(mapFile);
 
             var stopwatch = Stopwatch.StartNew();
-            
+
             renderer.LoadFromDMap(dmapFile);
-            
+
             stopwatch.Stop();
             var renderTimeMs = stopwatch.ElapsedMilliseconds;
 
             AssertThat(renderTimeMs).IsLess(1000);
-            
+
             GD.Print($"Map rendering completed in {renderTimeMs}ms (target: <1000ms)");
         }
 
@@ -103,22 +103,22 @@ namespace DMapImporter.Tests
         public void MemoryUsage_StaysWithinLimits()
         {
             var mapFile = Path.Combine(_mapPath, "forum.DMap");
-            
+
             var initialMemory = GC.GetTotalMemory(true);
-            
+
             var dmapFile = new DmapFile(mapFile);
             var renderer = AutoFree(new DMapRenderer())!;
             renderer.LoadFromDMap(dmapFile);
-            
+
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.Collect();
-            
+
             var finalMemory = GC.GetTotalMemory(false);
             var memoryUsedMB = (finalMemory - initialMemory) / (1024 * 1024);
 
             AssertThat(memoryUsedMB).IsLess(100);
-            
+
             GD.Print($"Memory usage: {memoryUsedMB}MB (target: <100MB)");
         }
 
@@ -130,14 +130,14 @@ namespace DMapImporter.Tests
             AssertThat(File.Exists(mapFile)).IsTrue();
 
             var stopwatch = Stopwatch.StartNew();
-            
+
             var dmapFile = new DmapFile(mapFile);
-            
+
             stopwatch.Stop();
             var loadTimeMs = stopwatch.ElapsedMilliseconds;
 
             AssertThat(loadTimeMs).IsLess(maxLoadTimeMs);
-            
+
             GD.Print($"{mapFileName}: {loadTimeMs}ms (target: <{maxLoadTimeMs}ms)");
         }
 
@@ -151,9 +151,9 @@ namespace DMapImporter.Tests
             {
                 var mapFile = Path.Combine(_mapPath, mapName);
                 var stopwatch = Stopwatch.StartNew();
-                
+
                 var dmapFile = new DmapFile(mapFile);
-                
+
                 stopwatch.Stop();
                 loadTimes.Add(stopwatch.ElapsedMilliseconds);
             }
@@ -163,7 +163,7 @@ namespace DMapImporter.Tests
             var variation = (double)(maxTime - minTime) / minTime;
 
             AssertThat(variation).IsLess(2.0);
-            
+
             GD.Print($"Sequential loads: {string.Join("ms, ", loadTimes)}ms, variation: {variation:P1}");
         }
 
@@ -175,17 +175,17 @@ namespace DMapImporter.Tests
             var dmapFile = new DmapFile(mapFile);
 
             var stopwatch = Stopwatch.StartNew();
-            
+
             renderer.LoadFromDMap(dmapFile);
-            
+
             var childCount = renderer.GetChildCount();
             var buildTimeMs = stopwatch.ElapsedMilliseconds;
-            
+
             stopwatch.Stop();
 
             var timePerChild = childCount > 0 ? (double)buildTimeMs / childCount : 0;
             AssertThat(timePerChild).IsLess(10.0);
-            
+
             GD.Print($"Scene graph: {childCount} nodes built in {buildTimeMs}ms ({timePerChild:F2}ms/node)");
         }
 
@@ -196,10 +196,10 @@ namespace DMapImporter.Tests
             var dmapFile = new DmapFile(mapFile);
 
             var stopwatch = Stopwatch.StartNew();
-            
+
             var tileCount = 0;
             var validTiles = 0;
-            
+
             for (int x = 0; x < (int)dmapFile.SizeTiles.Width; x++)
             {
                 for (int y = 0; y < (int)dmapFile.SizeTiles.Height; y++)
@@ -212,12 +212,12 @@ namespace DMapImporter.Tests
                     }
                 }
             }
-            
+
             stopwatch.Stop();
 
             var timePerTileNs = (stopwatch.ElapsedTicks * 1000000000.0) / Stopwatch.Frequency / tileCount;
             AssertThat(timePerTileNs).IsLess(1000.0);
-            
+
             GD.Print($"Tile access: {tileCount} tiles in {stopwatch.ElapsedMilliseconds}ms ({timePerTileNs:F1}ns/tile)");
         }
 
@@ -226,9 +226,9 @@ namespace DMapImporter.Tests
         {
             var maps = new[] { "smith.DMap", "grocery.DMap", "horse.DMap" };
             var loadTimes = new long[maps.Length];
-            
+
             var stopwatch = Stopwatch.StartNew();
-            
+
             System.Threading.Tasks.Parallel.For(0, maps.Length, i =>
             {
                 var mapFile = Path.Combine(_mapPath, maps[i]);
@@ -237,13 +237,13 @@ namespace DMapImporter.Tests
                 innerStopwatch.Stop();
                 loadTimes[i] = innerStopwatch.ElapsedMilliseconds;
             });
-            
+
             stopwatch.Stop();
 
             var maxTime = loadTimes.Max();
             AssertThat(maxTime).IsLess(3000);
             AssertThat(stopwatch.ElapsedMilliseconds).IsLess(maxTime + 500);
-            
+
             GD.Print($"Parallel loads: Total {stopwatch.ElapsedMilliseconds}ms, " +
                     $"Individual: [{string.Join(", ", loadTimes)}]ms");
         }

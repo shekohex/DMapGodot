@@ -61,7 +61,7 @@ namespace DMapImporter.Tests
             var renderer = AutoFree(new DMapRenderer())!;
 
             // This should not crash and should log an error
-            renderer.LoadFromDMap(null);
+            renderer.LoadFromDMap(null!);
 
             AssertThat(renderer.MapSize).IsEqual(Vector2I.Zero);
             AssertThat(renderer.DMapPath).IsEqual("");
@@ -107,9 +107,9 @@ namespace DMapImporter.Tests
             AssertThat(tileSizeProperty).IsNotNull();
 
             // Check for Export attributes
-            var dmapPathExport = dmapPathProperty.GetCustomAttributes(typeof(Godot.ExportAttribute), false);
-            var mapSizeExport = mapSizeProperty.GetCustomAttributes(typeof(Godot.ExportAttribute), false);
-            var tileSizeExport = tileSizeProperty.GetCustomAttributes(typeof(Godot.ExportAttribute), false);
+            var dmapPathExport = dmapPathProperty!.GetCustomAttributes(typeof(Godot.ExportAttribute), false);
+            var mapSizeExport = mapSizeProperty!.GetCustomAttributes(typeof(Godot.ExportAttribute), false);
+            var tileSizeExport = tileSizeProperty!.GetCustomAttributes(typeof(Godot.ExportAttribute), false);
 
             AssertThat(dmapPathExport.Length).IsEqual(1);
             AssertThat(mapSizeExport.Length).IsEqual(1);

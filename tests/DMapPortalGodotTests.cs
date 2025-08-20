@@ -63,9 +63,9 @@ namespace DMapImporter.Tests
             AssertThat(destinationPosProperty).IsNotNull();
 
             // Check for Export attributes
-            var portalIdExport = portalIdProperty.GetCustomAttributes(typeof(Godot.ExportAttribute), false);
-            var destinationMapExport = destinationMapProperty.GetCustomAttributes(typeof(Godot.ExportAttribute), false);
-            var destinationPosExport = destinationPosProperty.GetCustomAttributes(typeof(Godot.ExportAttribute), false);
+            var portalIdExport = portalIdProperty!.GetCustomAttributes(typeof(Godot.ExportAttribute), false);
+            var destinationMapExport = destinationMapProperty!.GetCustomAttributes(typeof(Godot.ExportAttribute), false);
+            var destinationPosExport = destinationPosProperty!.GetCustomAttributes(typeof(Godot.ExportAttribute), false);
 
             AssertThat(portalIdExport.Length).IsEqual(1);
             AssertThat(destinationMapExport.Length).IsEqual(1);

@@ -57,7 +57,7 @@ namespace DMapImporter.Tests
         public void Puzzles_CanBeAdded()
         {
             var sceneLayer = new SceneLayer();
-            
+
             sceneLayer.Puzzles.Add("puzzle1.dat");
             sceneLayer.Puzzles.Add("puzzle2.dat");
             sceneLayer.Puzzles.Add("complex_puzzle.dat");
