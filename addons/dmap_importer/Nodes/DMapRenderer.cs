@@ -89,6 +89,7 @@ namespace DMapImporter.Nodes
 
             ClearChildren();
             CreateLayers();
+            CreateSelectionLayer();
             PopulateFromDMap();
         }
 
@@ -245,5 +246,178 @@ namespace DMapImporter.Nodes
         }
 
         public DmapFile? GetDMapFile() => _dmapFile;
+
+        // Selection functionality for Editor Dock
+        [Signal]
+        public delegate void TileSelectedEventHandler(Vector2I tileCoords, short height, ushort surface, ushort noAccess);
+
+        [Signal]
+        public delegate void TileHoveredEventHandler(Vector2I tileCoords);
+
+        private Vector2I _selectedTile = new Vector2I(-1, -1);
+        private System.Collections.Generic.HashSet<Vector2I> _selectedTiles = new System.Collections.Generic.HashSet<Vector2I>();
+        private TileMapLayer? _selectionLayer;
+
+        private void CreateSelectionLayer()
+        {
+            _selectionLayer = new TileMapLayer();
+            _selectionLayer.Name = "SelectionLayer";
+            _selectionLayer.ZIndex = 10;
+            _selectionLayer.Enabled = true;
+            
+            // Create a simple selection tileset
+            var selectionTileSet = new TileSet();
+            selectionTileSet.TileShape = TileSet.TileShapeEnum.Isometric;
+            selectionTileSet.TileSize = new Vector2I(64, 32);
+            selectionTileSet.TileLayout = TileSet.TileLayoutEnum.Stacked;
+            
+            var source = new TileSetAtlasSource();
+            source.Texture = CreateSelectionTexture();
+            source.TextureRegionSize = new Vector2I(64, 32);
+            source.CreateTile(Vector2I.Zero, new Vector2I(1, 1));
+            
+            selectionTileSet.AddSource(source);
+            _selectionLayer.TileSet = selectionTileSet;
+            
+            AddChild(_selectionLayer);
+            
+            if (Engine.IsEditorHint())
+            {
+                var root = GetTree()?.EditedSceneRoot;
+                if (root != null)
+                {
+                    _selectionLayer.Owner = root;
+                }
+            }
+        }
+
+        private Texture2D CreateSelectionTexture()
+        {
+            // Create a simple selection texture
+            var image = Image.CreateEmpty(64, 32, false, Image.Format.Rgba8);
+            image.Fill(new Godot.Color(1, 1, 0, 0.5f)); // Yellow with transparency
+            
+            var texture = ImageTexture.CreateFromImage(image);
+            return texture;
+        }
+
+        public override void _UnhandledInput(InputEvent @event)
+        {
+            if (!Engine.IsEditorHint())
+                return;
+            
+            if (@event is InputEventMouseButton mouseButton)
+            {
+                if (mouseButton.Pressed && mouseButton.ButtonIndex == MouseButton.Left)
+                {
+                    var globalPos = mouseButton.GlobalPosition;
+                    var localPos = ToLocal(globalPos);
+                    var tileCoords = GetTileFromPosition(localPos);
+                    
+                    if (IsValidTileCoordinate(tileCoords))
+                    {
+                        SelectTile(tileCoords);
+                    }
+                }
+            }
+        }
+
+        private Vector2I GetTileFromPosition(Vector2 localPos)
+        {
+            if (_terrainLayer != null)
+            {
+                return _terrainLayer.LocalToMap(localPos);
+            }
+            
+            // Fallback to coordinate helper
+            if (_coordinateHelper != null)
+            {
+                return _coordinateHelper.LocalToTile(localPos);
+            }
+            
+            return new Vector2I(-1, -1);
+        }
+
+        private void SelectTile(Vector2I tileCoords)
+        {
+            _selectedTile = tileCoords;
+            _selectedTiles.Clear();
+            _selectedTiles.Add(tileCoords);
+            
+            var tileData = GetTileData(tileCoords);
+            if (tileData.HasValue)
+            {
+                var tile = tileData.Value;
+                EmitSignal(SignalName.TileSelected, tileCoords, tile.Height, tile.Surface, tile.NoAccess);
+            }
+            
+            UpdateSelectionVisual();
+        }
+
+        private void UpdateSelectionVisual()
+        {
+            if (_selectionLayer != null)
+            {
+                _selectionLayer.Clear();
+                
+                foreach (var tile in _selectedTiles)
+                {
+                    _selectionLayer.SetCell(tile, 0, Vector2I.Zero);
+                }
+            }
+        }
+
+        public void UpdateTileProperty(Vector2I tileCoords, string property, object value)
+        {
+            if (_dmapFile == null || !IsValidTileCoordinate(tileCoords))
+                return;
+            
+            var tile = _dmapFile.TileSet[tileCoords.X, tileCoords.Y];
+            
+            switch (property)
+            {
+                case "height":
+                    tile = new Tile(tile.NoAccess, tile.Surface, (short)value);
+                    break;
+                case "surface":
+                    tile = new Tile(tile.NoAccess, (ushort)value, tile.Height);
+                    break;
+                case "no_access":
+                    tile = new Tile((ushort)value, tile.Surface, tile.Height);
+                    break;
+            }
+            
+            _dmapFile.TileSet[tileCoords.X, tileCoords.Y] = tile;
+            RefreshTileVisual(tileCoords);
+        }
+
+        public Tile? GetTileData(Vector2I tileCoords)
+        {
+            if (_dmapFile == null || !IsValidTileCoordinate(tileCoords))
+                return null;
+            
+            return _dmapFile.TileSet[tileCoords.X, tileCoords.Y];
+        }
+
+        public System.Collections.Generic.List<Vector2I> GetSelectedTiles()
+        {
+            return new System.Collections.Generic.List<Vector2I>(_selectedTiles);
+        }
+
+        private bool IsValidTileCoordinate(Vector2I coords)
+        {
+            return coords.X >= 0 && coords.X < MapSize.X &&
+                   coords.Y >= 0 && coords.Y < MapSize.Y;
+        }
+
+        private void RefreshTileVisual(Vector2I tileCoords)
+        {
+            if (_terrainLayer != null && _dmapFile != null)
+            {
+                var tile = _dmapFile.TileSet[tileCoords.X, tileCoords.Y];
+                // Update custom data for the tile if needed
+                // This will be expanded when the tileset creation is complete
+            }
+        }
     }
 }

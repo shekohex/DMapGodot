@@ -16,7 +16,7 @@ namespace DMapImporter.Tests
             Directory.GetCurrentDirectory(), "Game", "5017", "map", "map", "Dsquare.DMap");
 
         [TestCase]
-        public void TestThreeLayerCreation()
+        public void TestFourLayerCreation()
         {
             // Use auto_free to ensure proper cleanup of all created nodes
             var renderer = AutoFree(new DMapRenderer())!;
@@ -24,17 +24,19 @@ namespace DMapImporter.Tests
 
             renderer.LoadFromDMap(testDmap);
 
-            // Verify three children
-            AssertThat(renderer.GetChildCount()).IsEqual(3);
+            // Verify four children (including SelectionLayer)
+            AssertThat(renderer.GetChildCount()).IsEqual(4);
 
             // Verify layer types and names
             var bg = renderer.GetNode("BackgroundLayer");
             var terrain = renderer.GetNode("TerrainLayer");
             var objects = renderer.GetNode("ObjectLayer");
+            var selection = renderer.GetNode("SelectionLayer");
 
             AssertThat(bg).IsNotNull();
             AssertThat(terrain).IsNotNull();
             AssertThat(objects).IsNotNull();
+            AssertThat(selection).IsNotNull();
 
             // Verify Z-ordering
             AssertThat(bg.GetIndex()).IsEqual(0);
