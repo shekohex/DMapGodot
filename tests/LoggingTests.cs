@@ -1,6 +1,7 @@
 using GdUnit4;
 using static GdUnit4.Assertions;
-using DMapImporter.Core.Utility;
+using DMapImporter.Core.Logging;
+using Microsoft.Extensions.Logging;
 using System;
 using System.IO;
 
@@ -9,139 +10,210 @@ namespace DMapImporter.Tests
     [TestSuite]
     public class LoggingTests
     {
-        [TestCase]
-        public void TestLogLevelsExist()
+        private ILoggerFactory? _loggerFactory;
+        private ILogger<LoggingTests>? _logger;
+
+        [BeforeTest]
+        public void SetUp()
         {
-            // Test that all log levels are available
-            AssertThat(Log.LogLevel.Debug).IsEqual(Log.LogLevel.Debug);
-            AssertThat(Log.LogLevel.Info).IsEqual(Log.LogLevel.Info);
-            AssertThat(Log.LogLevel.Warn).IsEqual(Log.LogLevel.Warn);
-            AssertThat(Log.LogLevel.Error).IsEqual(Log.LogLevel.Error);
+            _loggerFactory = DMapLoggerFactory.CreateDefault();
+            _logger = _loggerFactory.CreateLogger<LoggingTests>();
         }
-        
-        [TestCase]
-        public void TestLogLevelOrdering()
+
+        [AfterTest]
+        public void TearDown()
         {
-            // Test that log levels have correct numeric ordering
-            AssertThat((int)Log.LogLevel.Debug).IsLess((int)Log.LogLevel.Info);
-            AssertThat((int)Log.LogLevel.Info).IsLess((int)Log.LogLevel.Warn);
-            AssertThat((int)Log.LogLevel.Warn).IsLess((int)Log.LogLevel.Error);
+            _loggerFactory?.Dispose();
         }
-        
+
         [TestCase]
-        public void TestLogLevelFiltering()
+        public void TestModernLogLevels()
         {
-            // Test that minimum log level filtering works
-            var originalLevel = Log.MinimumLogLevel;
+            // Test that modern ILogger LogLevel values work
+            AssertThat(LogLevel.Trace).IsEqual(LogLevel.Trace);
+            AssertThat(LogLevel.Debug).IsEqual(LogLevel.Debug);
+            AssertThat(LogLevel.Information).IsEqual(LogLevel.Information);
+            AssertThat(LogLevel.Warning).IsEqual(LogLevel.Warning);
+            AssertThat(LogLevel.Error).IsEqual(LogLevel.Error);
+            AssertThat(LogLevel.Critical).IsEqual(LogLevel.Critical);
+        }
+
+        [TestCase]
+        public void TestLoggingFactoryCreatesLoggers()
+        {
+            var factory = DMapLoggerFactory.CreateDefault();
+            AssertThat(factory).IsNotNull();
             
-            try
-            {
-                // Set to Warn level - should filter out Debug and Info
-                Log.SetMinimumLogLevel(Log.LogLevel.Warn);
-                AssertThat(Log.MinimumLogLevel).IsEqual(Log.LogLevel.Warn);
-                
-                // Test convenience methods
-                Log.EnableDebugLogging();
-                AssertThat(Log.MinimumLogLevel).IsEqual(Log.LogLevel.Debug);
-                
-                Log.SetQuietMode();
-                AssertThat(Log.MinimumLogLevel).IsEqual(Log.LogLevel.Error);
-            }
-            finally
-            {
-                // Restore original level
-                Log.SetMinimumLogLevel(originalLevel);
-            }
-        }
-        
-        [TestCase]
-        public void TestLoggingMethodsExist()
-        {
-            // Test that all logging methods exist and can be called without exceptions
-            try
-            {
-                Log.Debug("Test debug message");
-                Log.Info("Test info message");
-                Log.Warn("Test warning message");
-                Log.Error("Test error message");
-                
-                // Test error with exception
-                var testException = new InvalidOperationException("Test exception");
-                Log.Error("Test error with exception", testException);
-            }
-            catch (Exception ex)
-            {
-                AssertThat(false).OverrideFailureMessage($"Logging methods should not throw exceptions: {ex.Message}").IsTrue();
-            }
-        }
-        
-        [TestCase]
-        public void TestEnvironmentInfo()
-        {
-            // Test that environment info can be retrieved
-            var envInfo = Log.GetEnvironmentInfo();
-            AssertThat(envInfo).IsNotNull();
-            AssertThat(envInfo).Contains("Logging Environment:");
-            AssertThat(envInfo).Contains("Min Level:");
+            var logger = factory.CreateLogger("TestCategory");
+            AssertThat(logger).IsNotNull();
             
-            // Should contain either "Godot Engine" or "Standalone Console"
-            bool hasValidEnvironment = envInfo.Contains("Godot Engine") || envInfo.Contains("Standalone Console");
-            AssertThat(hasValidEnvironment).IsTrue();
-        }
-        
-        [TestCase]
-        public void TestBackwardsCompatibility()
-        {
-            // Test that legacy method signatures still work (even if deprecated)
-            try
-            {
-                #pragma warning disable CS0618 // Type or member is obsolete
-                Log.Error("Test backwards compatibility error", ConsoleColor.Red, ConsoleColor.White);
-                Log.Warn("Test backwards compatibility warn", ConsoleColor.Yellow, ConsoleColor.Black);
-                #pragma warning restore CS0618 // Type or member is obsolete
-            }
-            catch (Exception ex)
-            {
-                AssertThat(false).OverrideFailureMessage($"Legacy methods should still work: {ex.Message}").IsTrue();
-            }
-        }
-        
-        [TestCase]
-        public void TestLogLevelConfiguration()
-        {
-            var originalLevel = Log.MinimumLogLevel;
+            var typedLogger = factory.CreateLogger<LoggingTests>();
+            AssertThat(typedLogger).IsNotNull();
             
-            try
+            factory.Dispose();
+        }
+
+        [TestCase]
+        public void TestModernLoggingMethods()
+        {
+            AssertThat(_logger).IsNotNull();
+            
+            // Test that modern logging methods work
+            _logger!.LogDebug("Test debug message");
+            _logger!.LogInformation("Test info message");
+            _logger!.LogWarning("Test warning message");
+            _logger!.LogError("Test error message");
+            _logger!.LogCritical("Test critical message");
+            
+            // Should not throw exceptions
+            AssertThat(true).IsTrue();
+        }
+
+        [TestCase]
+        public void TestLoggingConfiguration()
+        {
+            // Test configuring logging options
+            var options = new DMapLoggingOptions
             {
-                // Test setting different log levels
-                foreach (Log.LogLevel level in Enum.GetValues<Log.LogLevel>())
-                {
-                    Log.SetMinimumLogLevel(level);
-                    AssertThat(Log.MinimumLogLevel).IsEqual(level);
-                }
-            }
-            finally
+                MinimumLevel = LogLevel.Warning,
+                EnableConsoleLogging = true,
+                EnableFileLogging = false
+            };
+            
+            var factory = DMapLoggerFactory.Create(options);
+            AssertThat(factory).IsNotNull();
+            
+            factory.Dispose();
+        }
+
+        [TestCase]
+        public void TestDevelopmentConfiguration()
+        {
+            var options = DMapLoggerFactory.CreateDevelopmentOptions();
+            AssertThat(options).IsNotNull();
+            AssertThat(options.MinimumLevel).IsEqual(LogLevel.Debug);
+        }
+
+        [TestCase]
+        public void TestProductionConfiguration()
+        {
+            var options = DMapLoggerFactory.CreateProductionOptions();
+            AssertThat(options).IsNotNull();
+            AssertThat(options.MinimumLevel).IsEqual(LogLevel.Information);
+            AssertThat(options.EnableConsoleLogging).IsFalse();
+        }
+
+        [TestCase]
+        public void TestGodotDetection()
+        {
+            var isGodotAvailable = DMapLoggerFactory.IsGodotAvailable();
+            // Should return a boolean without throwing
+            AssertThat(isGodotAvailable).IsNotNull();
+        }
+
+        [TestCase]
+        public void TestLoggingWithParameters()
+        {
+            AssertThat(_logger).IsNotNull();
+            
+            _logger!.LogInformation("Test message with parameter: {param}", "testValue");
+            _logger!.LogError("Error with multiple params: {param1} {param2}", 123, "test");
+            
+            // Should not throw exceptions
+            AssertThat(true).IsTrue();
+        }
+
+        [TestCase]
+        public void TestLoggingWithException()
+        {
+            AssertThat(_logger).IsNotNull();
+            
+            var ex = new InvalidOperationException("Test exception");
+            _logger!.LogError(ex, "Test error with exception");
+            
+            // Should not throw exceptions
+            AssertThat(true).IsTrue();
+        }
+
+        [TestCase]
+        public void TestLoggingScope()
+        {
+            AssertThat(_logger).IsNotNull();
+            
+            using (_logger!.BeginScope("TestScope"))
             {
-                Log.SetMinimumLogLevel(originalLevel);
+                _logger.LogInformation("Message within scope");
+                // Should complete without error
+                AssertThat(true).IsTrue();
             }
         }
-        
+
         [TestCase]
-        public void TestGodotDetectionStability()
+        public void TestFileLoggingOptions()
         {
-            // Test that Godot detection doesn't crash and is consistent
-            var envInfo1 = Log.GetEnvironmentInfo();
-            var envInfo2 = Log.GetEnvironmentInfo();
-            
-            // Environment detection should be consistent between calls
-            AssertThat(envInfo1).IsEqual(envInfo2);
-            
-            // Test that logging works multiple times without issues
-            for (int i = 0; i < 5; i++)
+            var fileOptions = new FileLoggingOptions
             {
-                Log.Debug($"Stability test {i}");
-                Log.Info($"Stability test {i}");
-            }
+                LogDirectory = "test_logs/",
+                MaxFileSizeBytes = 1024 * 1024, // 1MB
+                MaxLogFiles = 3,
+                EnableRotation = true
+            };
+            
+            AssertThat(fileOptions.LogDirectory).IsEqual("test_logs/");
+            AssertThat(fileOptions.MaxFileSizeBytes).IsEqual(1024 * 1024);
+            AssertThat(fileOptions.MaxLogFiles).IsEqual(3);
+            AssertThat(fileOptions.EnableRotation).IsTrue();
+        }
+
+        [TestCase]
+        public void TestGodotLoggingOptions()
+        {
+            var godotOptions = new GodotLoggingOptions
+            {
+                UseGodotColors = true,
+                UseRichText = false,
+                IncludeScopes = true
+            };
+            
+            AssertThat(godotOptions.UseGodotColors).IsTrue();
+            AssertThat(godotOptions.UseRichText).IsFalse();
+            AssertThat(godotOptions.IncludeScopes).IsTrue();
+        }
+
+        [TestCase]
+        public void TestLoggingProviderCreation()
+        {
+            var fileOptions = new FileLoggingOptions();
+            var fileProvider = new RotatingFileLoggerProvider(fileOptions);
+            AssertThat(fileProvider).IsNotNull();
+            fileProvider.Dispose();
+            
+            var godotOptions = new GodotLoggingOptions();
+            var godotProvider = new GodotLoggerProvider(godotOptions);
+            AssertThat(godotProvider).IsNotNull();
+            godotProvider.Dispose();
+        }
+
+        [TestCase]
+        public void TestLoggerIsEnabled()
+        {
+            AssertThat(_logger).IsNotNull();
+            
+            // Information should be enabled by default
+            AssertThat(_logger!.IsEnabled(LogLevel.Information)).IsTrue();
+            
+            // Trace should be disabled by default
+            AssertThat(_logger.IsEnabled(LogLevel.Trace)).IsFalse();
+        }
+
+        [TestCase]
+        public void TestLoggerFactoryInstance()
+        {
+            var instance1 = DMapLoggerFactory.Instance;
+            var instance2 = DMapLoggerFactory.Instance;
+            
+            AssertThat(instance1).IsNotNull();
+            AssertThat(instance1).IsEqual(instance2); // Should be singleton
         }
     }
 }

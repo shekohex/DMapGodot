@@ -1,8 +1,9 @@
 #if TOOLS
 using Godot;
 using DMapImporter.Core.Dmap;
-using DMapImporter.Core.Utility;
+using DMapImporter.Core.Logging;
 using DMapImporter.Nodes;
+using Microsoft.Extensions.Logging;
 using System;
 using System.IO;
 
@@ -11,6 +12,14 @@ namespace DMapImporter.Importers
     [Tool]
     public partial class DMapImporter : EditorImportPlugin
     {
+        private readonly ILogger<DMapImporter> _logger;
+        
+        public DMapImporter()
+        {
+            var loggerFactory = DMapLoggerFactory.CreateGodotOptimizedOptions();
+            var factory = DMapLoggerFactory.Create(loggerFactory);
+            _logger = factory.CreateLogger<DMapImporter>();
+        }
         public override string _GetImporterName()
         {
             return "dmap.importer";
@@ -152,12 +161,12 @@ namespace DMapImporter.Importers
         {
             try
             {
-                Log.Info($"DMapImporter: Starting import of: {sourceFile}");
+                _logger.LogInformation("Starting import of: {sourceFile}", sourceFile);
                 
                 // Validate source file exists
                 if (!File.Exists(sourceFile))
                 {
-                    Log.Error($"DMapImporter: Source file not found: {sourceFile}");
+                    _logger.LogError("Source file not found: {sourceFile}", sourceFile);
                     return Error.FileNotFound;
                 }
                 
@@ -170,18 +179,20 @@ namespace DMapImporter.Importers
                 float textureQuality = options.ContainsKey("texture_quality") ? options["texture_quality"].AsSingle() : 0.8f;
                 bool enableCompression = options.ContainsKey("enable_compression") ? options["enable_compression"].AsBool() : true;
                 
-                Log.Debug($"DMapImporter: Import options - TileSize: {tileSize}, Terrain: {enableTerrain}, Portals: {enablePortals}, Objects: {enableObjects}");
+                _logger.LogDebug("Import options - TileSize: {tileSize}, Terrain: {enableTerrain}, Portals: {enablePortals}, Objects: {enableObjects}", 
+                    tileSize, enableTerrain, enablePortals, enableObjects);
                 
                 // Load DMAP file using existing parser
                 DmapFile dmap;
                 try
                 {
                     dmap = new DmapFile(sourceFile);
-                    Log.Info($"DMapImporter: Successfully loaded DMAP: {dmap.DmapName}, Size: {dmap.SizeTiles.Width}x{dmap.SizeTiles.Height}");
+                    _logger.LogInformation("Successfully loaded DMAP: {dmapName}, Size: {width}x{height}", 
+                        dmap.DmapName, dmap.SizeTiles.Width, dmap.SizeTiles.Height);
                 }
                 catch (Exception ex)
                 {
-                    Log.Error($"DMapImporter: Failed to load DMAP file", ex);
+                    _logger.LogError(ex, "Failed to load DMAP file");
                     return Error.ParseError;
                 }
                 
@@ -194,11 +205,11 @@ namespace DMapImporter.Importers
                 try
                 {
                     renderer.LoadFromDMap(dmap);
-                    Log.Debug($"DMapImporter: Successfully populated renderer with DMAP data");
+                    _logger.LogDebug("Successfully populated renderer with DMAP data");
                 }
                 catch (Exception ex)
                 {
-                    Log.Error($"DMapImporter: Failed to populate renderer", ex);
+                    _logger.LogError(ex, "Failed to populate renderer");
                     renderer?.QueueFree();
                     return Error.CantCreate;
                 }
@@ -210,15 +221,15 @@ namespace DMapImporter.Importers
                     var result = packedScene.Pack(renderer);
                     if (result != Error.Ok)
                     {
-                        Log.Error($"DMapImporter: Failed to pack scene: {result}");
+                        _logger.LogError("Failed to pack scene: {result}", result);
                         renderer?.QueueFree();
                         return result;
                     }
-                    Log.Debug("DMapImporter: Successfully packed scene");
+                    _logger.LogDebug("Successfully packed scene");
                 }
                 catch (Exception ex)
                 {
-                    Log.Error($"DMapImporter: Exception while packing scene", ex);
+                    _logger.LogError(ex, "Exception while packing scene");
                     renderer?.QueueFree();
                     return Error.CantCreate;
                 }
@@ -230,26 +241,26 @@ namespace DMapImporter.Importers
                     var saveResult = ResourceSaver.Save(packedScene, outputPath);
                     if (saveResult != Error.Ok)
                     {
-                        Log.Error($"DMapImporter: Failed to save PackedScene: {saveResult}");
+                        _logger.LogError("Failed to save PackedScene: {saveResult}", saveResult);
                         return saveResult;
                     }
-                    Log.Info($"DMapImporter: Successfully saved PackedScene to: {outputPath}");
+                    _logger.LogInformation("Successfully saved PackedScene to: {outputPath}", outputPath);
                 }
                 catch (Exception ex)
                 {
-                    Log.Error($"DMapImporter: Exception while saving PackedScene", ex);
+                    _logger.LogError(ex, "Exception while saving PackedScene");
                     return Error.FileCantWrite;
                 }
                 
                 // Clean up temporary nodes
                 renderer?.QueueFree();
                 
-                Log.Info($"DMapImporter: Import completed successfully");
+                _logger.LogInformation("Import completed successfully");
                 return Error.Ok;
             }
             catch (Exception ex)
             {
-                Log.Error($"DMapImporter: Unexpected error during import", ex);
+                _logger.LogError(ex, "Unexpected error during import");
                 return Error.Failed;
             }
         }

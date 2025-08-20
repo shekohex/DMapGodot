@@ -6,12 +6,21 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using DMapImporter.Core.Extensions;
+using DMapImporter.Core.Logging;
 using DMapImporter.Core.Utility;
+using Microsoft.Extensions.Logging;
 
 namespace DMapImporter.Core.Dmap
 {
     public class DmapFile
     {
+        private static readonly ILogger<DmapFile> _logger;
+        
+        static DmapFile()
+        {
+            var loggerFactory = DMapLoggerFactory.Instance;
+            _logger = loggerFactory.CreateLogger<DmapFile>();
+        }
         public string DmapName { get; set; } = string.Empty;
         public string DmapPath { get; set; } = string.Empty;
 
@@ -103,9 +112,10 @@ namespace DMapImporter.Core.Dmap
                 this.TileSet = new Tile[this.SizeTiles.Width, this.SizeTiles.Height];
 
                 uint val = BitConverter.ToUInt32(this.Header, 4);
-                Log.Debug($"Path: {DmapPath}, Version: {MapVersion}, Header: {headerStr}, Val {val}");
+                _logger.LogDebug("Path: {dmapPath}, Version: {mapVersion}, Header: {headerStr}, Val {val}", 
+                    DmapPath, MapVersion, headerStr, val);
                 
-                if (IsNew && MapVersion < 1005) Log.Debug("NEW < 1005");
+                if (IsNew && MapVersion < 1005) _logger.LogDebug("NEW < 1005");
                 for (int tileY = 0; tileY < this.SizeTiles.Height; tileY++)
                 {
                     for (int tileX = 0; tileX < this.SizeTiles.Width; tileX++)
@@ -152,7 +162,7 @@ namespace DMapImporter.Core.Dmap
                                 uint unk = br.ReadUInt32();
                                 break;
                             default:
-                                Log.Warn($"Unknown Map item type: {itemType}");
+                                _logger.LogWarning("Unknown Map item type: {itemType}", itemType);
                                 break;
                         }
                     }
@@ -186,7 +196,7 @@ namespace DMapImporter.Core.Dmap
                             {
                                 uint unk = br.ReadUInt32();
                                 if (unk != 0)
-                                    Log.Debug($"Unexpected non-zero value: {unk:X4}");
+                                    _logger.LogDebug("Unexpected non-zero value: {unk:X4}", unk);
                             }
                             break;
                         case MapObjectType.Puzzle:
@@ -241,7 +251,7 @@ namespace DMapImporter.Core.Dmap
                             _ = br.ReadTilePosition();
                             break;
                         default:
-                            Log.Warn($"Unknown map object type: 0x{objType:X2}");
+                            _logger.LogWarning("Unknown map object type: 0x{objType:X2}", objType);
                             break;
                     }
                 }
@@ -310,12 +320,12 @@ namespace DMapImporter.Core.Dmap
                                         uint unk16 = br.ReadUInt32();
                                         uint unk8 = br.ReadUInt32();
                                         break;
-                                    default: Log.Warn($"Unsupport Additional Layer Map Object {objType}"); break;
+                                    default: _logger.LogWarning("Unsupported Additional Layer Map Object {objType}", objType); break;
                                 }
                             }
                             this.SceneLayers.Add(sceneLayer);
                             break;
-                        default: Log.Warn($"Unknown Additional Layer Type: {layType}"); break;
+                        default: _logger.LogWarning("Unknown Additional Layer Type: {layType}", layType); break;
                     }
                 }
 
@@ -324,9 +334,9 @@ namespace DMapImporter.Core.Dmap
                     _ = br.ReadBytes(8);
                 }
 
-                Log.Debug($"Finished reading {this.DmapPath}, {numLayers} additional layers.");
+                _logger.LogDebug("Finished reading {dmapPath}, {numLayers} additional layers", DmapPath, numLayers);
                 if (br.BaseStream.Position != br.BaseStream.Length)
-                    Log.Warn($"Stream position mismatch: {br.BaseStream.Position}/{br.BaseStream.Length}");
+                    _logger.LogWarning("Stream position mismatch: {position}/{length}", br.BaseStream.Position, br.BaseStream.Length);
             }
         }
 
@@ -430,7 +440,7 @@ namespace DMapImporter.Core.Dmap
                 }
             }
 
-            Log.Debug($"Finished Saving map {bw.BaseStream.Position}");
+            _logger.LogDebug("Finished Saving map {position}", bw.BaseStream.Position);
         }
     }
 }
