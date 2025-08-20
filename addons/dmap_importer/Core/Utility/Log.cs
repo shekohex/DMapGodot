@@ -35,5 +35,10 @@ namespace DMapImporter.Core.Utility
             // Console.Write("INFO:");
             // Console.WriteLine($" {Message}");
         }
+        
+        public static void Debug(string Message)
+        {
+            // Debug messages are completely disabled to reduce test verbosity
+        }
     }
 }

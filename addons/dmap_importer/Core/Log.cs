@@ -94,19 +94,28 @@ namespace DMapImporter.Core
         /// </summary>
         public static void Info(string message)
         {
-            if (IsGodotAvailable)
-            {
-                try
-                {
-                    _gdPrintMethod!.Invoke(null, new object[] { $"[INFO] {message}" });
-                    return;
-                }
-                catch
-                {
-                    // Fall through to console if Godot call fails
-                }
-            }
-            Console.WriteLine($"[INFO] {message}");
+            // Info messages disabled during testing to reduce verbosity
+            // if (IsGodotAvailable)
+            // {
+            //     try
+            //     {
+            //         _gdPrintMethod!.Invoke(null, new object[] { $"[INFO] {message}" });
+            //         return;
+            //     }
+            //     catch
+            //     {
+            //         // Fall through to console if Godot call fails
+            //     }
+            // }
+            // Console.WriteLine($"[INFO] {message}");
+        }
+        
+        /// <summary>
+        /// Logs a debug message (disabled to reduce verbosity)
+        /// </summary>
+        public static void Debug(string message)
+        {
+            // Debug messages are completely disabled to reduce test verbosity
         }
     }
 }

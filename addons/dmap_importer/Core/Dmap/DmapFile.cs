@@ -103,9 +103,9 @@ namespace DMapImporter.Core.Dmap
                 this.TileSet = new Tile[this.SizeTiles.Width, this.SizeTiles.Height];
 
                 uint val = BitConverter.ToUInt32(this.Header, 4);
-                Log.Info($"Path: {DmapPath}, Version: {MapVersion}, Header: {headerStr}, Val {val}");
+                Log.Debug($"Path: {DmapPath}, Version: {MapVersion}, Header: {headerStr}, Val {val}");
                 
-                if (IsNew && MapVersion < 1005) Log.Info("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!NEW < 1005");
+                if (IsNew && MapVersion < 1005) Log.Debug("NEW < 1005");
                 for (int tileY = 0; tileY < this.SizeTiles.Height; tileY++)
                 {
                     for (int tileX = 0; tileX < this.SizeTiles.Width; tileX++)
@@ -186,7 +186,7 @@ namespace DMapImporter.Core.Dmap
                             {
                                 uint unk = br.ReadUInt32();
                                 if (unk != 0)
-                                    Log.Info($"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! not 0 {unk:X4}");
+                                    Log.Debug($"Unexpected non-zero value: {unk:X4}");
                             }
                             break;
                         case MapObjectType.Puzzle:
@@ -324,7 +324,7 @@ namespace DMapImporter.Core.Dmap
                     _ = br.ReadBytes(8);
                 }
 
-                Log.Info($"Finished reading {this.DmapPath}, {numLayers} additional layers. ");
+                Log.Debug($"Finished reading {this.DmapPath}, {numLayers} additional layers.");
                 if (br.BaseStream.Position != br.BaseStream.Length)
                     Log.Warn($"Stream position mismatch: {br.BaseStream.Position}/{br.BaseStream.Length}");
             }
@@ -430,7 +430,7 @@ namespace DMapImporter.Core.Dmap
                 }
             }
 
-            Log.Info($"Finished Saving map {bw.BaseStream.Position}");
+            Log.Debug($"Finished Saving map {bw.BaseStream.Position}");
         }
     }
 }

@@ -1,18 +1,28 @@
 #if TOOLS
 using Godot;
 using System;
+using DMapImporter.Importers;
 
 [Tool]
 public partial class DMapImporterPlugin : EditorPlugin
 {
+	private DMapImporter.Importers.DMapImporter? _dmapImporter;
+	
 	public override void _EnterTree()
 	{
-		// Initialization of the plugin goes here.
+		_dmapImporter = new DMapImporter.Importers.DMapImporter();
+		AddImportPlugin(_dmapImporter);
+		GD.Print("[DMapImporterPlugin] DMAP Importer plugin registered");
 	}
 
 	public override void _ExitTree()
 	{
-		// Clean-up of the plugin goes here.
+		if (_dmapImporter != null)
+		{
+			RemoveImportPlugin(_dmapImporter);
+			_dmapImporter = null;
+			GD.Print("[DMapImporterPlugin] DMAP Importer plugin unregistered");
+		}
 	}
 }
 #endif
