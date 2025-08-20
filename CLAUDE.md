@@ -34,3 +34,7 @@
 - Preserve existing DMAP parsing logic from Tiled2Dmap, focus on Godot integration
 - Copy Core classes unchanged: `Tile.cs`, `Portal.cs`, `Cover.cs`, `CordConverter.cs`, Extensions
 - Update only archive handling (SevenZipSharp → SharpCompress) in `DmapFile.cs`
+
+## Task Master AI Instructions
+**Import Task Master's development workflow commands and guidelines, treat as if import is in the main CLAUDE.md file.**
+@./.taskmaster/CLAUDE.md
