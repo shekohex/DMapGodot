@@ -27,9 +27,16 @@ public partial class DMapImporterPlugin : EditorPlugin
 
     public override void _EnterTree()
     {
+        // Register DMap importer
         _dmapImporter = new DMapImporter.Importers.DMapImporter();
         AddImportPlugin(_dmapImporter);
         _logger.LogInformation("DMAP Importer plugin registered");
+
+        // Add custom node type for DMapRenderer
+        var script = GD.Load<Script>("res://addons/dmap_importer/Nodes/DMapRenderer.cs");
+        var icon = GD.Load<Texture2D>("res://addons/dmap_importer/icons/dmap.svg");
+        AddCustomType("DMapRenderer", "Node2D", script, icon);
+        _logger.LogInformation("DMapRenderer custom type registered");
     }
 
     public override void _ExitTree()
@@ -40,6 +47,10 @@ public partial class DMapImporterPlugin : EditorPlugin
             _dmapImporter = null;
             _logger.LogInformation("DMAP Importer plugin unregistered");
         }
+
+        // Remove custom node type
+        RemoveCustomType("DMapRenderer");
+        _logger.LogInformation("DMapRenderer custom type unregistered");
     }
 }
 #endif
