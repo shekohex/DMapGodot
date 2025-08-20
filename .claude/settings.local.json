@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__taskmaster-ai__update_task"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

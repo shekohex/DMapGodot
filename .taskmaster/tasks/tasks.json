@@ -1,0 +1,994 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Install Required NuGet Packages",
+        "description": "Add SharpCompress, BCnEncoder.Net, and GdUnit4Net packages to the DMapGodot.csproj file for archive handling, DDS texture conversion, and testing support. Implements Phase 1: Project Setup, Section 4.1 from PRD (lines 114-135).",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "details": "Update DMapGodot.csproj to include comprehensive PackageReference entries as specified in PRD lines 115-134. This replaces SevenZipSharp (mentioned in PRD line 106) with SharpCompress for archive handling and adds DDS texture conversion capabilities via BCnEncoder.Net. Also includes GdUnit4Net testing framework setup.\n\n**Complete csproj content (PRD lines 115-134):**\n```xml\n<Project Sdk=\"Godot.NET.Sdk/4.4.0\">\n  <PropertyGroup>\n    <TargetFramework>net8.0</TargetFramework>\n    <EnableDynamicLoading>true</EnableDynamicLoading>\n    <RootNamespace>DMapImporter</RootNamespace>\n  </PropertyGroup>\n\n  <ItemGroup>\n    <PackageReference Include=\"SharpCompress\" Version=\"0.38.0\" />\n    <PackageReference Include=\"BCnEncoder.Net\" Version=\"2.1.0\" />\n    <!-- Testing -->\n    <PackageReference Include=\"gdUnit4.api\" Version=\"5.0.0\" />\n    <PackageReference Include=\"gdUnit4.test.adapter\" Version=\"3.0.0\" />\n    <PackageReference Include=\"gdUnit4.analyzers\" Version=\"1.0.0\">\n      <PrivateAssets>all</PrivateAssets>\n      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>\n    </PackageReference>\n  </ItemGroup>\n</Project>\n```\n\n**Package Dependencies Context:**\n- SharpCompress v0.38.0: Replaces SevenZipSharp for .7z/.dmap archive handling (PRD line 124)\n- BCnEncoder.Net v2.1.0: DDS texture conversion for game assets (PRD line 125)\n- GdUnit4Net packages: Testing framework for Godot C# projects (PRD lines 127-133)\n\n**Post-installation commands:**\n1. `dotnet restore` - Install dependencies\n2. `dotnet build` - Verify compilation\n3. `dotnet test` - Verify test framework setup",
+        "testStrategy": "Verify packages are installed correctly through multiple validation steps: 1) Check obj/project.assets.json for package references, 2) Attempt to use SharpCompress and BCnEncoder namespaces in test files, 3) Verify GdUnit4Net test discovery with `dotnet test --list-tests`, 4) Create simple test case to confirm framework integration, 5) Build project without errors using `dotnet build`",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Update DMapGodot.csproj with complete package references",
+            "description": "Replace current csproj content with complete version from PRD lines 115-134",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Update project file to include all required PackageReference entries: SharpCompress v0.38.0, BCnEncoder.Net v2.1.0, and all GdUnit4Net testing packages. Also update PropertyGroup to include RootNamespace as DMapImporter.",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Run dotnet restore to install packages",
+            "description": "Execute package installation and verify successful download",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Run `dotnet restore` command and verify all packages download successfully. Check for any version conflicts or dependency issues.",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Verify SharpCompress installation",
+            "description": "Test SharpCompress namespace accessibility and basic functionality",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Create test file to verify `using SharpCompress.Archives;` and `using SharpCompress.Archives.SevenZip;` namespaces are accessible. Test basic archive opening functionality.",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Verify BCnEncoder.Net installation",
+            "description": "Test BCnEncoder.Net namespace accessibility for DDS conversion",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Create test file to verify `using BCnEncoder.Net;` namespace is accessible. Test basic DDS decoding functionality preparation.",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Verify GdUnit4Net testing framework",
+            "description": "Confirm test framework installation and discovery",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Run `dotnet test --list-tests` to verify test discovery works. Create simple test case using GdUnit4 attributes to confirm framework integration.",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Build project to verify compilation",
+            "description": "Run full project build to ensure no compilation errors",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Execute `dotnet build` and resolve any compilation issues. Verify all package references resolve correctly and project builds successfully.",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Document common installation issues",
+            "description": "Create troubleshooting guide for package installation problems",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Document solutions for common issues: package version conflicts, .NET SDK version mismatches, Godot.NET.Sdk compatibility, and GdUnit4Net setup problems.",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Copy Core DMAP Parsing Classes",
+        "description": "Migrate unchanged core parsing classes from Tiled2Dmap directory into the plugin's Core folder structure following PRD Phase 2 Core Migration specifications (Section 5.1, lines 151-163)",
+        "status": "pending",
+        "dependencies": [
+          1
+        ],
+        "priority": "high",
+        "details": "Create Core/ directory structure under addons/dmap_importer/ following PRD directory layout (lines 80-87). Copy unchanged files from Tiled2Dmap as specified in PRD lines 157-162:\n\nDirect File Copies (PRD Section 5.1):\n- Source: Tiled2Dmap/Dmap/Tile.cs → Destination: addons/dmap_importer/Core/Dmap/Tile.cs\n- Source: Tiled2Dmap/Dmap/Portal.cs → Destination: addons/dmap_importer/Core/Dmap/Portal.cs\n- Source: Tiled2Dmap/Dmap/Cover.cs → Destination: addons/dmap_importer/Core/Dmap/Cover.cs\n- Source: Tiled2Dmap/Dmap/CordConverter.cs → Destination: addons/dmap_importer/Core/Dmap/CordConverter.cs\n- Source: Tiled2Dmap/Extensions/ → Destination: addons/dmap_importer/Core/Extensions/ (all .cs files including BinaryReaderExtensions.cs, BinaryWriterExtensions.cs, ByteExtensions.cs)\n- Source: Tiled2Dmap/Utility/ → Destination: addons/dmap_importer/Core/Utility/ (all .cs files including Size.cs, PixelPosition.cs, TilePosition.cs, etc.)\n\nAdditional core files to copy:\n- Effect.cs, Sound.cs, SceneFile.cs, ScenePart.cs, SceneTile.cs, TerrainScene.cs from Tiled2Dmap/Dmap/\n\nNamespace Updates:\n- Preserve original internal namespaces\n- Update root namespace from Tiled2Dmap.* to DMapImporter.Core.*\n- Component mapping per PRD table (lines 101-103): BinaryReader Extensions and CordConverter.cs use as-is\n\nDirectory Structure (PRD lines 80-87):\naddons/dmap_importer/Core/\n├── Dmap/              # All original parsing classes\n├── Extensions/        # Binary reader extensions\n├── Utility/           # Coordinate types\n└── Tiled/             # Tiled format support (if needed)",
+        "testStrategy": "Compile the project after copying files to ensure no compilation errors. Create unit tests to verify basic instantiation of Tile, Portal, and Cover classes. Verify namespace updates are correct and all references resolve properly. Test that copied Extension methods are accessible and functional.",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Core directory structure",
+            "description": "Create the Core/ folder hierarchy under addons/dmap_importer/ following PRD directory layout",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Create directories: Core/Dmap/, Core/Extensions/, Core/Utility/ as specified in PRD lines 80-87",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Copy core DMAP parsing classes",
+            "description": "Copy Tile.cs, Portal.cs, Cover.cs, CordConverter.cs from Tiled2Dmap/Dmap/ to Core/Dmap/",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Direct file copies as specified in PRD lines 157-160. These files should remain unchanged except for namespace updates.",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Copy Extensions classes",
+            "description": "Copy all extension files from Tiled2Dmap/Extensions/ to Core/Extensions/",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Copy BinaryReaderExtensions.cs, BinaryWriterExtensions.cs, ByteExtensions.cs as specified in PRD line 161. Component mapping (PRD line 101) indicates these should be used as-is.",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Copy Utility classes",
+            "description": "Copy all utility files from Tiled2Dmap/Utility/ to Core/Utility/",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Copy all .cs files including Size.cs, PixelPosition.cs, TilePosition.cs, TileOffset.cs, PixelOffset.cs, ClientResource.cs, etc. as specified in PRD line 162.",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Copy additional scene classes",
+            "description": "Copy Effect.cs, Sound.cs, SceneFile.cs, ScenePart.cs, SceneTile.cs, TerrainScene.cs",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Copy additional parsing classes from Tiled2Dmap/Dmap/ that are needed for complete scene parsing functionality.",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Update namespaces",
+            "description": "Update root namespace from Tiled2Dmap.* to DMapImporter.Core.*",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Preserve original internal namespaces but update the root namespace in all copied files. Update using directives where necessary to maintain proper references.",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Verify compilation",
+            "description": "Build project to ensure all copied files compile without errors",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Run 'dotnet build' to verify no compilation errors after namespace updates and file copying. Resolve any missing references or namespace issues.",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Create basic unit tests",
+            "description": "Create unit tests for core classes to verify proper instantiation",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Create GdUnit4Net tests to verify Tile, Portal, and Cover classes can be instantiated and basic properties are accessible. This validates the migration was successful.",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Adapt DmapFile Class for SharpCompress",
+        "description": "Update the DmapFile.cs class to use SharpCompress instead of SevenZipSharp for archive extraction, following PRD Phase 2 Core Migration Section 5.2 (lines 164-183) specifications",
+        "status": "pending",
+        "dependencies": [
+          2
+        ],
+        "priority": "high",
+        "details": "Copy DmapFile.cs from Tiled2Dmap/Dmap/DmapFile.cs (PRD line 102) to Core/Dmap/ and replace SevenZipSharp usage with SharpCompress following the component mapping from PRD line 106. Update the extraction logic around lines 61-70 with the exact code replacement specified in PRD lines 169-182:\n\nOriginal (lines 61-70):\n```csharp\nusing SevenZip;\n// ...\nnew SevenZipExtractor(this.DmapPath).ExtractFile(0, (Stream)memoryStream);\n```\n\nReplace with:\n```csharp\nusing SharpCompress.Archives;\nusing SharpCompress.Archives.SevenZip;\n// ...\nusing (var archive = SevenZipArchive.Open(this.DmapPath))\n{\n    var entry = archive.Entries.First();\n    entry.WriteTo(memoryStream);\n}\n```\n\nMaintain all existing parsing logic for tiles, portals, covers, and scenes. Add proper error handling for archive operations including file not found, corrupted archives, and extraction failures. Update namespace declarations and ensure compatibility with existing CordConverter and Tile classes.",
+        "testStrategy": "Test with actual DMAP files from Game/5017/map/ directory as specified in PRD. Verify that the file can be opened, extracted, and parsed correctly using SharpCompress. Compare parsed data with original implementation output to ensure no regression. Test error scenarios including corrupted archives, missing files, and invalid DMAP formats. Validate that all tile data, portal information, and scene objects are correctly extracted and accessible through the existing API.",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Copy DmapFile.cs to Core/Dmap Directory",
+            "description": "Copy the original DmapFile.cs from Tiled2Dmap/Dmap/DmapFile.cs to addons/dmap_importer/Core/Dmap/DmapFile.cs as referenced in PRD line 102",
+            "status": "pending",
+            "dependencies": [],
+            "details": "",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Update Using Statements for SharpCompress",
+            "description": "Replace 'using SevenZip;' with 'using SharpCompress.Archives;' and 'using SharpCompress.Archives.SevenZip;' as specified in PRD lines 175-176",
+            "status": "pending",
+            "dependencies": [],
+            "details": "",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Replace Archive Extraction Logic",
+            "description": "Update lines 61-70 extraction code from 'new SevenZipExtractor(this.DmapPath).ExtractFile(0, (Stream)memoryStream);' to the SharpCompress pattern specified in PRD lines 178-182",
+            "status": "pending",
+            "dependencies": [],
+            "details": "",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Add Error Handling for Archive Operations",
+            "description": "Implement try-catch blocks for archive opening, entry access, and extraction operations with descriptive error messages",
+            "status": "pending",
+            "dependencies": [],
+            "details": "",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Verify Existing API Compatibility",
+            "description": "Ensure all public methods and properties of DmapFile class remain unchanged to maintain compatibility with dependent classes",
+            "status": "pending",
+            "dependencies": [],
+            "details": "",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Test with Game Client DMAP Files",
+            "description": "Test the updated implementation with actual DMAP files from Game/5017/map/ directory to verify successful parsing of tiles, portals, covers, and scenes",
+            "status": "pending",
+            "dependencies": [],
+            "details": "",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Validate Data Integrity",
+            "description": "Compare parsed output from SharpCompress implementation with original SevenZipSharp implementation to ensure no data loss or corruption",
+            "status": "pending",
+            "dependencies": [],
+            "details": "",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Update Project Dependencies",
+            "description": "Ensure SharpCompress NuGet package is properly referenced in the project file and remove any SevenZipSharp dependencies",
+            "status": "pending",
+            "dependencies": [],
+            "details": "",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Implement DMapImporter EditorImportPlugin",
+        "description": "Create the main EditorImportPlugin class to handle DMAP file imports in Godot editor, implementing comprehensive import functionality with support for multiple archive formats and proper PackedScene generation",
+        "status": "pending",
+        "dependencies": [
+          3
+        ],
+        "priority": "high",
+        "details": "Create DMapImporter.cs in addons/dmap_importer/Importers/ directory following PRD Phase 3 Section 6.2 specifications (lines 230-269). Implement complete EditorImportPlugin with the following methods:\n\n1. _GetImporterName() - return \"dmap_importer\"\n2. _GetVisibleName() - return \"DMAP File Importer\" \n3. _GetRecognizedExtensions() - support .dmap, .7z, .zmap formats (PRD line 244)\n4. _GetSaveExtension() - return \"tscn\"\n5. _GetResourceType() - return \"PackedScene\"\n6. _GetImportOptions() - define import settings\n7. _Import() method with comprehensive implementation:\n   - Load and parse DMAP file using DmapFile class\n   - Create DMapRenderer node as root\n   - Populate renderer with parsed tile, portal, and object data\n   - Generate PackedScene with proper resource configuration (PRD lines 261-265)\n   - Implement error handling for file parsing and resource creation\n   - Support both compressed (.7z) and uncompressed formats\n\nReference EditorImportPlugin documentation: https://docs.godotengine.org/en/stable/classes/class_editorimportplugin.html\n\nDirectory structure follows PRD lines 78-92:\n- addons/dmap_importer/Importers/DMapImporter.cs\n- Integration with plugin.cfg for editor registration\n- Proper namespace and using directives for Godot integration\n\nImplement comprehensive error handling:\n- File access validation\n- Archive format verification\n- Memory management for large DMAP files\n- Graceful fallback for unsupported features\n- User-friendly error messages in Godot editor\n\nEnsure seamless Godot editor integration:\n- Automatic file recognition and import triggering\n- Import settings dialog with user options\n- Progress reporting for large file operations\n- Proper resource dependency management",
+        "testStrategy": "Comprehensive testing approach:\n1. Place test DMAP files (.dmap, .7z, .zmap) in project directory\n2. Trigger import through Godot editor FileSystem dock\n3. Verify .import files are created with correct settings\n4. Confirm PackedScene resources are generated and loadable\n5. Test import options dialog functionality\n6. Verify DMapRenderer nodes are properly configured\n7. Test error handling with corrupted/invalid files\n8. Validate memory usage with large DMAP files\n9. Confirm editor integration doesn't cause crashes\n10. Test reimport functionality when source files change",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement core EditorImportPlugin methods",
+            "description": "Create basic plugin structure with required override methods",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Implement _GetImporterName, _GetVisibleName, _GetRecognizedExtensions, _GetSaveExtension, _GetResourceType methods per PRD specification",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement import options and settings",
+            "description": "Define configurable import options for user customization",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Create _GetImportOptions method with settings for texture quality, compression, coordinate system, and rendering options",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Implement core _Import method logic",
+            "description": "Create main import processing pipeline",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Implement file loading, DmapFile instantiation, data parsing, and basic error handling structure",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Implement PackedScene creation and configuration",
+            "description": "Generate proper PackedScene resources from DMAP data",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Create DMapRenderer root node, populate with parsed data, configure scene tree, and save using ResourceSaver per PRD lines 261-265",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Implement comprehensive error handling",
+            "description": "Add robust error handling and user feedback",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Handle file access errors, parsing failures, memory issues, and provide meaningful error messages in Godot editor",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Test editor integration and file format support",
+            "description": "Validate all supported file formats and editor workflows",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Test .dmap, .7z, .zmap import, verify editor recognition, test import dialog, validate PackedScene generation",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Create DMapRenderer Node",
+        "description": "Implement the main rendering node that extends Node2D for displaying DMAP content. Implements PRD Phase 4 Rendering System Section 7.1 (lines 273-368) with complete three-layer architecture and isometric coordinate conversion.",
+        "status": "pending",
+        "dependencies": [
+          4
+        ],
+        "priority": "high",
+        "details": "Create DMapRenderer.cs in addons/dmap_importer/Nodes/ following PRD lines 280-367. Extend Node2D and implement comprehensive rendering system:\n\n**Core Structure:**\n- LoadFromDMap(DmapFile) method as main entry point\n- Three child nodes with Z-index ordering (PRD lines 300-321):\n  - backgroundLayer: TileMap (Z:0) for puzzle piece textures\n  - terrainLayer: TileMap (Z:1) with custom data for walkability/height/surface\n  - objectLayer: Node2D (Z:2) with YSortEnabled for 3D objects\n\n**Coordinate System:**\n- Implement Cell2World/World2Cell conversion using CordConverter (PRD lines 103)\n- Configure isometric TileMap settings: tile_set.tile_shape = TILE_SHAPE_ISOMETRIC\n- Set proper tile offsets and cell sizes for isometric projection\n\n**Layer Configuration:**\n- Background: Standard tile rendering with texture mapping\n- Terrain: Custom data layers for tile properties (walkable:bool, height:int, surface:enum)\n- Objects: Y-sorted 3D sprites with proper depth ordering\n\n**Property System:**\n- Implement custom data layers on TileMap resources\n- Support runtime property modification through editor dock integration\n- Handle tile property persistence and real-time updates",
+        "testStrategy": "Use Game/5017/map/ test data for comprehensive testing. Create test scene with DMapRenderer, load various DMAP files (small/medium/large). Verify:\n1. All three layers created with correct Z-ordering\n2. Isometric tile placement matches expected layout using CordConverter\n3. Custom data properties correctly assigned to terrain tiles\n4. Y-sorting functionality for object layer\n5. Performance with larger maps (Game/5017/map/ contains 147 test files)\n6. TileMap isometric configuration follows Godot documentation standards",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create DMapRenderer class structure",
+            "description": "Set up the base DMapRenderer.cs file extending Node2D with required attributes and methods",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Create file in addons/dmap_importer/Nodes/ with [Tool] attribute, extend Node2D, add LoadFromDMap(DmapFile) method signature, implement _Ready() for initialization",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Initialize three-layer architecture",
+            "description": "Create and configure the three child nodes with proper Z-indexing",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Instantiate backgroundLayer and terrainLayer as TileMap nodes, objectLayer as Node2D with YSortEnabled=true. Set Z-index values (0,1,2) and add as children in correct order",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Configure isometric TileMap settings",
+            "description": "Set up TileMap resources for isometric rendering",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Create TileSet resources with tile_shape=TILE_SHAPE_ISOMETRIC, configure cell sizes and offsets based on DMAP tile dimensions, reference Godot TileMap documentation for isometric best practices",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Implement coordinate conversion system",
+            "description": "Integrate CordConverter for proper isometric positioning",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Use CordConverter.Cell2World() and World2Cell() methods for coordinate transformation, implement helper methods for converting DMAP coordinates to Godot isometric positions",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Add custom data layers for tile properties",
+            "description": "Configure terrain layer with custom data for walkability, height, and surface types",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Define custom data layers on TileSet: walkable (bool), height (int), surface (enum). Implement methods to set/get these properties during map loading",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Implement LoadFromDMap method",
+            "description": "Create the main method that processes DmapFile and populates all layers",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Parse DmapFile tiles, populate background layer with textures, set terrain layer tiles with custom data, place objects in object layer with proper Y-sorting",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Test with Game/5017/map/ data",
+            "description": "Validate rendering with actual DMAP files from test data",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Load various DMAP files from Game/5017/map/ directory, verify correct rendering of all layers, test performance with different map sizes, ensure coordinate conversion accuracy",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Implement Isometric TileSet Creation",
+        "description": "Create TileSet resources with proper isometric configuration and custom data layers for terrain properties based on PRD Phase 4 Rendering System specifications (lines 322-343)",
+        "status": "pending",
+        "dependencies": [
+          5
+        ],
+        "priority": "medium",
+        "details": "Implement CreateTerrainTileSet() and CreatePuzzleTileSet() methods in DMapRenderer following PRD Phase 4 specifications. Complete CreateTerrainTileSet() implementation:\n\n```csharp\nprivate TileSet CreateTerrainTileSet()\n{\n    var tileSet = new TileSet();\n    tileSet.TileShape = TileSet.TileShapeEnum.Isometric;\n    tileSet.TileSize = new Vector2I(64, 32);\n\n    // Add custom data layers (from Tile.cs structure)\n    tileSet.AddCustomDataLayer();\n    tileSet.SetCustomDataLayerName(0, \"no_access\");\n    tileSet.SetCustomDataLayerType(0, Variant.Type.Bool);\n\n    tileSet.AddCustomDataLayer();\n    tileSet.SetCustomDataLayerName(1, \"surface\");\n    tileSet.SetCustomDataLayerType(1, Variant.Type.Int);\n\n    tileSet.AddCustomDataLayer();\n    tileSet.SetCustomDataLayerName(2, \"height\");\n    tileSet.SetCustomDataLayerType(2, Variant.Type.Int);\n\n    return tileSet;\n}\n```\n\nMap Tile.cs properties: NoAccess (ushort) → no_access (bool), Surface (ushort) → surface (int), Height (short) → height (int). Create tile sources from DDS textures converted via TextureConverter. Configure collision shapes based on walkability using tile's NoAccess property. Reference: https://docs.godotengine.org/en/stable/classes/class_tileset.html",
+        "testStrategy": "Generate TileSet resource, verify TileShape.Isometric configuration, confirm tile size Vector2I(64, 32), validate custom data layers accessible via GetCustomDataLayerCount(), test tile collision detection with NoAccess property mapping, verify texture source creation from converted DDS files",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create DMapRenderer Node Class Structure",
+            "description": "Create the main DMapRenderer.cs class extending Node2D in addons/dmap_importer/Nodes/ directory with proper Godot attributes and basic structure for isometric rendering",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Create DMapRenderer.cs in addons/dmap_importer/Nodes/ following PRD lines 284-321. Implement as [Tool] public partial class DMapRenderer : Node2D with private fields for TileMap layers (backgroundLayer, terrainLayer) and Node2D objectLayer. Include LoadFromDMap(DmapFile dmap) method signature and CreateLayers() method structure. Reference PRD directory structure (lines 88-90) and component mapping (lines 104-105).",
+            "testStrategy": "Verify class compiles without errors, confirm [Tool] attribute enables editor functionality, test Node2D inheritance provides proper transform capabilities"
+          },
+          {
+            "id": 2,
+            "title": "Implement CreateTerrainTileSet Method with Isometric Configuration",
+            "description": "Implement CreateTerrainTileSet() method to create TileSet resource with isometric shape configuration and 64x32 pixel tile size as specified in PRD lines 323-343",
+            "status": "pending",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement complete CreateTerrainTileSet() method from PRD lines 323-343. Configure TileSet with TileShape = TileSet.TileShapeEnum.Isometric and TileSize = new Vector2I(64, 32). Method creates new TileSet instance and returns configured TileSet ready for custom data layer addition. Reference Godot TileSet documentation: https://docs.godotengine.org/en/stable/classes/class_tileset.html",
+            "testStrategy": "Verify TileSet instance creation, confirm TileShape.Isometric setting, validate Vector2I(64, 32) tile size configuration, test TileSet resource can be assigned to TileMap"
+          },
+          {
+            "id": 3,
+            "title": "Add Custom Data Layers for Tile Properties",
+            "description": "Add custom data layers to TileSet for 'no_access' (bool), 'surface' (int), and 'height' (int) properties matching Tile.cs structure from Tiled2Dmap",
+            "status": "pending",
+            "dependencies": [
+              2
+            ],
+            "details": "Extend CreateTerrainTileSet() to add three custom data layers using TileSet.AddCustomDataLayer(), SetCustomDataLayerName(), and SetCustomDataLayerType() methods. Map to Tile.cs properties from Tiled2Dmap/Dmap/Tile.cs: NoAccess (ushort) → no_access (bool), Surface (ushort) → surface (int), Height (short) → height (int). Each layer configured with appropriate Variant.Type (Bool, Int) as shown in PRD lines 329-340.",
+            "testStrategy": "Verify three custom data layers exist with correct names and types, confirm data layer accessibility through GetCustomDataLayerCount(), test layer name and type retrieval, validate mapping from original Tile.cs structure"
+          },
+          {
+            "id": 4,
+            "title": "Implement CreatePuzzleTileSet Method for Background Layer",
+            "description": "Create CreatePuzzleTileSet() method for background puzzle layer with appropriate configuration for non-interactive background tiles",
+            "status": "pending",
+            "dependencies": [
+              2
+            ],
+            "details": "Implement CreatePuzzleTileSet() method following similar pattern to CreateTerrainTileSet() but optimized for background puzzle tiles. Configure with same TileShape.Isometric and Vector2I(64, 32) tile size but without custom data layers as background tiles don't need terrain properties. Reference PRD lines 302-306 for layer structure and backgroundLayer usage.",
+            "testStrategy": "Verify separate TileSet creation for puzzle layer, confirm isometric configuration matches terrain TileSet, test assignment to backgroundLayer TileMap, validate no custom data layers present"
+          },
+          {
+            "id": 5,
+            "title": "Integrate TileSet Creation with Layer System and Texture Sources",
+            "description": "Connect TileSet creation methods with CreateLayers() method and integrate texture source management for DDS conversion and collision shape configuration",
+            "status": "pending",
+            "dependencies": [
+              3,
+              4
+            ],
+            "details": "Implement CreateLayers() method following PRD lines 299-321. Create backgroundLayer and terrainLayer as TileMap instances, assign TileSets using CreatePuzzleTileSet() and CreateTerrainTileSet() respectively. Configure ZIndex values (background=0, terrain=1) and add as children to DMapRenderer. Include objectLayer setup for Y-sorting (ZIndex=2). Add texture source creation from converted DDS textures and configure collision shapes based on Tile.NoAccess walkability property. Reference component mapping (PRD line 104) for TileMap usage.",
+            "testStrategy": "Verify both TileMap layers are created and added as children, confirm correct TileSet assignment to each layer, test ZIndex ordering for proper layer stacking, validate objectLayer Y-sorting configuration, test texture source integration and collision shape configuration"
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Implement DDS Texture Conversion",
+        "description": "Create texture converter to handle DDS format textures from DMAP files based on PRD Phase 4 Section 7.2 texture conversion specifications (lines 372-394)",
+        "status": "pending",
+        "dependencies": [
+          6
+        ],
+        "priority": "medium",
+        "details": "Create TextureConverter.cs in addons/dmap_importer/Importers/ implementing comprehensive DDS texture conversion functionality. Reference DDSLoader.cs from original Tiled2Dmap codebase for format handling patterns.\n\nImplement complete ConvertDDSToTexture() method (PRD lines 376-392):\n```csharp\npublic static ImageTexture ConvertDDSToTexture(byte[] ddsData)\n{\n    using var decoder = new BcDecoder();\n    var ddsFile = DdsFile.Load(new MemoryStream(ddsData));\n    \n    // Support DXT1, DXT3, DXT5 compression formats\n    var pixelData = decoder.DecodeToPixelsRgba32(ddsFile);\n    \n    var image = Image.CreateFromData(\n        ddsFile.Header.Width,\n        ddsFile.Header.Height,\n        false,\n        Image.Format.Rgba8,\n        pixelData.AsSpan().AsBytes().ToArray()\n    );\n    \n    return ImageTexture.CreateFromImage(image);\n}\n```\n\nKey requirements:\n- Use BCnEncoder.Net library for DDS decoding\n- Support DXT1, DXT3, DXT5 compression formats commonly used in game assets\n- Convert decoded pixel data to Godot's Image.Format.Rgba8\n- Create ImageTexture from converted Image data\n- Implement texture caching mechanism to avoid redundant conversions\n- Handle error cases for unsupported DDS formats gracefully\n\nReference Godot ImageTexture documentation: https://docs.godotengine.org/en/stable/classes/class_imagetexture.html",
+        "testStrategy": "Comprehensive testing with Game/5017/data/ItemMinIcon/ sample DDS files. Verify textures display correctly in Godot editor and runtime. Compare visual output with reference DDS viewer to ensure conversion accuracy. Test all supported compression formats (DXT1, DXT3, DXT5). Validate texture caching performance with repeated conversions. Confirm proper error handling for corrupted or unsupported DDS files.",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "Update Plugin Entry Point",
+        "description": "Enhance the main plugin class to register the importer and custom node types",
+        "status": "pending",
+        "dependencies": [
+          4,
+          5
+        ],
+        "priority": "medium",
+        "details": "Update DMapImporterPlugin.cs to properly register components in _EnterTree() following PRD Phase 3 Section 6.1 (lines 192-228). Implement the complete DMapImporterPlugin class code from PRD lines 194-227. Add the DMapImporter using AddImportPlugin(), register DMapRenderer as a custom node type with AddCustomType() including proper icon. Implement cleanup in _ExitTree() with RemoveImportPlugin() and RemoveCustomType(). Add [Tool] attribute and wrap in #if TOOLS directive. Configure plugin.cfg with metadata from PRD lines 139-147. Reference EditorPlugin documentation for _EnterTree()/_ExitTree() methods, AddImportPlugin(), and AddCustomType() usage patterns.",
+        "testStrategy": "Enable plugin in Project Settings, verify DMapRenderer appears in node creation dialog, confirm DMAP files show import options",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create plugin.cfg configuration file",
+            "description": "Create plugin.cfg in addons/dmap_importer/ with metadata from PRD lines 139-147",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Create plugin.cfg with name, description, author, version, and script entry point configuration as specified in PRD Phase 3 Section 6.1",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement DMapImporterPlugin class structure",
+            "description": "Create DMapImporterPlugin.cs with complete class implementation from PRD lines 194-227",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Implement the full DMapImporterPlugin class inheriting from EditorPlugin with [Tool] attribute and #if TOOLS directive wrapper. Include proper namespace and using statements.",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Implement _EnterTree() method with component registration",
+            "description": "Add _EnterTree() override to register DMapImporter and DMapRenderer components",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Use AddImportPlugin() to register DMapImporter instance and AddCustomType() to register DMapRenderer as custom node type with proper icon reference following EditorPlugin documentation patterns",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Implement _ExitTree() method with cleanup procedures",
+            "description": "Add _ExitTree() override to properly clean up registered components",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Use RemoveImportPlugin() and RemoveCustomType() to clean up DMapImporter and DMapRenderer registrations following proper cleanup procedures from EditorPlugin documentation",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Add plugin icon and resource references",
+            "description": "Create or reference appropriate icon for DMapRenderer custom node type",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Add icon resource for AddCustomType() call, ensuring proper resource path and icon format for Godot editor integration",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Implement Portal System",
+        "description": "Create interactive portal nodes for map transitions based on Portal.cs data, implementing comprehensive portal system with Area2D inheritance, Export properties, and map transition functionality as specified in PRD Phase 5 Section 8.2 (lines 462-497)",
+        "status": "pending",
+        "dependencies": [
+          5
+        ],
+        "priority": "medium",
+        "details": "Create DMapPortal.cs extending Area2D in addons/dmap_importer/Nodes/ following PRD Phase 5 Section 8.2 specifications. Implement complete portal system with the following components:\n\n1. **Class Structure**: Extend Area2D with Export properties:\n   - [Export] uint PortalId - links to original Portal.cs data\n   - [Export] string DestinationMap - target map file name\n   - [Export] Vector2I DestinationPos - destination coordinates\n\n2. **Visual Components**:\n   - Sprite2D child with portal icon texture (res://addons/dmap_importer/icons/portal.png)\n   - CollisionShape2D child with CircleShape2D (32px radius) for interaction area\n\n3. **Interaction Logic**:\n   - Connect to BodyEntered signal in _Ready()\n   - Handle player detection (check for \"player\" group)\n   - Trigger map transitions using GetTree().ChangeSceneToFile()\n   - Scene path format: res://maps/{DestinationMap}.tscn\n\n4. **Portal Positioning**: Use CordConverter.TileToWorld() to convert Portal.Position (TilePosition with X,Y uint properties) to Godot world coordinates\n\n5. **Integration**: Reference original Portal.cs structure from Tiled2Dmap/Dmap/ for data compatibility",
+        "testStrategy": "Comprehensive testing approach:\n1. Create test portal in scene with valid PortalId, DestinationMap, and DestinationPos properties\n2. Verify collision detection works with CircleShape2D (32px radius)\n3. Test BodyEntered signal emission on player character overlap\n4. Confirm portal properties are editable in Godot inspector\n5. Test map transition functionality with GetTree().ChangeSceneToFile()\n6. Verify portal positioning using CordConverter.TileToWorld() conversion\n7. Test portal icon display with Sprite2D component\n8. Validate integration with original Portal.cs data structure",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create DMapPortal class structure",
+            "description": "Create DMapPortal.cs extending Area2D with Export properties",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Create file in addons/dmap_importer/Nodes/DMapPortal.cs. Implement class extending Area2D with [Export] properties: uint PortalId, string DestinationMap, Vector2I DestinationPos. Add proper using statements for Godot namespace.",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement visual components",
+            "description": "Add Sprite2D and CollisionShape2D children with proper configuration",
+            "status": "pending",
+            "dependencies": [],
+            "details": "In _Ready() method, create Sprite2D child with portal icon texture (res://addons/dmap_importer/icons/portal.png). Create CollisionShape2D child with CircleShape2D resource, set radius to 32px for interaction area.",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Implement interaction logic",
+            "description": "Handle BodyEntered signal for player detection and map transitions",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Connect BodyEntered signal to handler method in _Ready(). Implement signal handler to check if entering body is in 'player' group. On valid player, call GetTree().ChangeSceneToFile() with scene path format: res://maps/{DestinationMap}.tscn",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Implement portal positioning system",
+            "description": "Add positioning logic using CordConverter for tile-to-world conversion",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Create SetPortalPosition() method that takes Portal.Position (TilePosition with X,Y uint properties) and uses CordConverter.TileToWorld() to convert to Godot world coordinates. Set Area2D.Position property accordingly.",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Add Portal.cs integration",
+            "description": "Ensure compatibility with original Portal data structure",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Reference Portal.cs from Tiled2Dmap/Dmap/ directory. Ensure PortalId property maps correctly to Portal.Id. Add constructor or initialization method that accepts Portal struct and sets properties accordingly.",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Create portal icon resource",
+            "description": "Add portal icon texture at specified path",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Create or obtain portal icon texture and place at res://addons/dmap_importer/icons/portal.png. Ensure texture is appropriate size and style for portal visualization in game.",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Create Editor Dock UI",
+        "description": "Build editor dock interface for live tile property editing following PRD Phase 5 Section 8.1 (lines 400-459). Implements complete DMapEditorDock class with Control inheritance, comprehensive UI elements, and real-time tile property editing capabilities.",
+        "status": "pending",
+        "dependencies": [
+          8
+        ],
+        "priority": "low",
+        "details": "Create DMapEditorDock.cs in addons/dmap_importer/Editor/ following PRD lines 408-456. Based on EditorPlugin dock example from Godot documentation.\n\n**Complete Implementation (PRD lines 408-456):**\n```csharp\n#if TOOLS\nusing Godot;\n\n[Tool]\npublic partial class DMapEditorDock : Control\n{\n    private DMapRenderer currentMap;\n    private SpinBox heightEditor;\n    private OptionButton surfaceSelector;\n    private CheckBox walkableToggle;\n\n    public override void _Ready()\n    {\n        CustomMinimumSize = new Vector2(250, 0);\n\n        var vbox = new VBoxContainer();\n        AddChild(vbox);\n\n        // Tile properties section\n        vbox.AddChild(new Label() { Text = \"Tile Properties\" });\n\n        // Height editor (from Tile.Height)\n        heightEditor = new SpinBox();\n        heightEditor.MinValue = -100;\n        heightEditor.MaxValue = 100;\n        heightEditor.ValueChanged += OnHeightChanged;\n        vbox.AddChild(heightEditor);\n\n        // Surface type (from Tile.Surface)\n        surfaceSelector = new OptionButton();\n        surfaceSelector.AddItem(\"Grass\");\n        surfaceSelector.AddItem(\"Stone\");\n        surfaceSelector.AddItem(\"Water\");\n        surfaceSelector.Selected += OnSurfaceChanged;\n        vbox.AddChild(surfaceSelector);\n\n        // Walkable toggle (from Tile.NoAccess)\n        walkableToggle = new CheckBox();\n        walkableToggle.Text = \"Walkable\";\n        walkableToggle.Toggled += OnWalkableToggled;\n        vbox.AddChild(walkableToggle);\n    }\n\n    private void OnHeightChanged(double value)\n    {\n        // Update selected tile's height\n        if (currentMap != null)\n        {\n            var selectedTile = GetSelectedTile();\n            UpdateTileProperty(selectedTile, \"height\", (int)value);\n        }\n    }\n}\n#endif\n```\n\n**Key Features:**\n- Extends Control with CustomMinimumSize (250x0)\n- VBoxContainer layout with \"Tile Properties\" label\n- SpinBox for height editing (-100 to 100 range, maps to Tile.Height)\n- OptionButton for surface types (Grass/Stone/Water, maps to Tile.Surface)\n- CheckBox for walkability toggle (maps to Tile.NoAccess inverse)\n- Signal connections for real-time updates\n- GetSelectedTile() and UpdateTileProperty() methods for editor integration\n- Proper #if TOOLS directive and [Tool] attribute\n\n**Additional Implementation Requirements:**\n- Complete OnSurfaceChanged and OnWalkableToggled signal handlers\n- Implement GetSelectedTile() method to identify selected tile\n- Implement UpdateTileProperty() method for live updates\n- Integrate with DMapRenderer for current map reference\n- Add proper error handling and validation",
+        "testStrategy": "Open editor dock in Godot editor, select tiles in viewport, verify property controls update to reflect selected tile values. Modify height values (-100 to 100) and confirm changes apply to tiles in real-time. Test surface type selection (Grass/Stone/Water) and walkability toggle. Verify UI minimum size (250 pixels width). Test signal connections and proper value synchronization between dock controls and tile properties. Ensure #if TOOLS compilation works correctly.",
+        "subtasks": []
+      },
+      {
+        "id": 11,
+        "title": "Setup GdUnit4Net Testing Framework",
+        "description": "Configure GdUnit4Net for comprehensive testing of the plugin components following PRD Phase 6 Testing Strategy Section 9.1-9.2 (lines 503-575) with complete test configuration, suite structure, and Godot runtime integration",
+        "status": "pending",
+        "dependencies": [
+          1
+        ],
+        "priority": "medium",
+        "details": "Implement comprehensive GdUnit4Net testing framework based on PRD Phase 6 specifications:\n\n**Package Installation:**\n- gdUnit4.api (v5.0.0)\n- gdUnit4.test.adapter (v3.0.0) \n- gdUnit4.analyzers (v1.0.0)\n\n**Complete .runsettings Configuration (PRD lines 507-521):**\n```xml\n<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<RunSettings>\n    <RunConfiguration>\n        <EnvironmentVariables>\n            <GODOT_BIN>path/to/Godot_v4.4-stable_mono.exe</GODOT_BIN>\n        </EnvironmentVariables>\n    </RunConfiguration>\n\n    <GdUnit4>\n        <DisplayName>FullyQualifiedName</DisplayName>\n        <CaptureStdOut>true</CaptureStdOut>\n    </GdUnit4>\n</RunSettings>\n```\n\n**Test Suite Structure (PRD lines 525-574):**\n- Logic tests without Godot runtime (Tile, Portal, Cover parsing)\n- Godot-dependent tests with [RequireGodotRuntime] attribute\n- Data-driven tests using [DataPoint] attribute for coordinate conversion\n- Integration tests for complete DMAP import workflow\n\n**Test Organization:**\n- tests/ directory structure under project root\n- Separate test classes for each component (DMapParserTests, DMapRendererTests, etc.)\n- Follow GdUnit4Net patterns with [TestSuite] and [TestCase] attributes\n- Use GdUnit4.Assertions for test validation\n\n**Environment Setup:**\n- GODOT_BIN environment variable configuration\n- Test discovery configuration in project settings\n- Reference GdUnit4Net documentation for advanced testing patterns",
+        "testStrategy": "Comprehensive testing validation:\n1. Run 'dotnet test' command to verify framework integration\n2. Confirm test discovery works for both logic and Godot-dependent tests\n3. Validate .runsettings configuration loads correctly\n4. Test GODOT_BIN environment variable setup\n5. Create sample tests following PRD patterns:\n   - Logic test for Tile data parsing (no Godot runtime)\n   - Godot-dependent test for TileMap creation\n   - Data-driven test for coordinate conversion with test data\n6. Verify test attributes work correctly ([TestSuite], [TestCase], [RequireGodotRuntime], [DataPoint])\n7. Confirm integration test can import complete DMAP file\n8. Validate test output capture and reporting functionality",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Install GdUnit4Net NuGet packages",
+            "description": "Add required GdUnit4Net packages to project",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Install packages: gdUnit4.api (v5.0.0), gdUnit4.test.adapter (v3.0.0), gdUnit4.analyzers (v1.0.0) using dotnet add package commands",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Create .runsettings configuration file",
+            "description": "Create complete .runsettings file with PRD specifications",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Create .runsettings in project root with complete XML configuration from PRD lines 507-521, including GODOT_BIN environment variable and GdUnit4 settings for DisplayName and CaptureStdOut",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Setup test project structure",
+            "description": "Create organized test directory structure",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Create tests/ directory under project root with proper organization for different test types: unit tests, integration tests, and data-driven tests following PRD test suite structure",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Configure GODOT_BIN environment variable",
+            "description": "Setup Godot binary path for test runtime",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Configure GODOT_BIN environment variable pointing to Godot_v4.4-stable_mono.exe for tests requiring Godot runtime, ensure path is correctly set in .runsettings and system environment",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Implement sample logic tests",
+            "description": "Create basic logic tests following PRD patterns",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Implement DMapParserTests class with [TestSuite] attribute, create sample tests for Tile data parsing without Godot runtime dependency, use GdUnit4.Assertions for validation as shown in PRD lines 536-542",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Implement Godot-dependent tests",
+            "description": "Create tests requiring Godot runtime",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Implement tests with [RequireGodotRuntime] attribute for TileMap creation and rendering functionality, following PRD pattern from lines 545-554",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Setup data-driven coordinate tests",
+            "description": "Implement data-driven tests for coordinate conversion",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Create coordinate conversion tests using [DataPoint] attribute with CoordinateTestData as shown in PRD lines 557-573, test CordConverter.Cell2World functionality with multiple test cases",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Create integration test framework",
+            "description": "Setup integration tests for complete DMAP import workflow",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Implement DMapIntegrationTests following PRD lines 580-599, test complete import process from DMAP file to PackedScene generation, verify file creation and import results",
+            "testStrategy": ""
+          },
+          {
+            "id": 9,
+            "title": "Validate test discovery and execution",
+            "description": "Verify complete testing framework functionality",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Run 'dotnet test' to confirm all test types are discovered and executed correctly, validate test output capture, verify both logic and Godot-dependent tests work properly with appropriate runtime requirements",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 12,
+        "title": "Implement Save/Export Functionality",
+        "description": "Add comprehensive bidirectional DMAP file operations to save modified data back to file format, implementing PRD Phase 6 Goals (lines 48-54) for complete save/load functionality with full data preservation and format compliance",
+        "status": "pending",
+        "dependencies": [
+          3,
+          5
+        ],
+        "priority": "low",
+        "details": "Implement comprehensive save/export functionality for the DmapFile class to enable bidirectional DMAP file operations as specified in PRD Goals Section 2 (lines 48-54). Create robust Save() and Export() methods that preserve all original data structures and format specifications while supporting both compressed (.7z) and uncompressed (.dmap) output formats.\n\n**Core Implementation Requirements:**\n\n1. **DmapFile Export Methods** - Extend DmapFile class with comprehensive export capabilities:\n   - Save() method for in-place file updates\n   - Export() method for save-as functionality\n   - WriteToDmap() method for binary DMAP format writing\n   - WriteToArchive() method for .7z compressed output\n\n2. **File Format Preservation** - Maintain complete DMAP format compliance:\n   - Preserve original header structure and MapVersion\n   - Maintain binary layout compatibility with game client\n   - Support all data sections: tiles, portals, covers, scenes, effects, sounds\n   - Ensure coordinate system consistency using CordConverter\n\n3. **Archive Creation with SharpCompress** - Replace SevenZipSharp with SharpCompress for output:\n   - Use SharpCompress.Writers.SevenZip for .7z creation\n   - Implement proper compression settings matching original files\n   - Support both compressed and uncompressed output modes\n   - Handle archive metadata and file structure preservation\n\n4. **Binary Writing Infrastructure** - Leverage existing BinaryWriterExtensions:\n   - Use WriteASCIIString() for string data\n   - Utilize Write() overloads for PixelPosition, TilePosition, Size types\n   - Implement proper endianness and data alignment\n   - Maintain binary compatibility with original file format\n\n5. **Coordinate Conversion Integration** - Ensure proper coordinate transformation:\n   - Convert Godot coordinates back to DMAP format using CordConverter\n   - Preserve tile positioning and portal coordinates\n   - Maintain scene layer positioning accuracy\n   - Handle isometric coordinate system conversion\n\n6. **Error Handling & Data Integrity** - Comprehensive validation and error management:\n   - Validate data integrity before writing\n   - Implement rollback on write failures\n   - Verify file completeness after save operations\n   - Handle permission and disk space issues gracefully\n   - Log detailed error information for debugging\n\n**Implementation Architecture:**\n```csharp\npublic class DmapFile\n{\n    public void Save() { /* In-place save */ }\n    public void Export(string outputPath, bool compress = true) { /* Save-as functionality */ }\n    private void WriteToDmap(Stream stream) { /* Binary DMAP writing */ }\n    private void WriteToArchive(string path) { /* SharpCompress .7z creation */ }\n    private void ValidateDataIntegrity() { /* Pre-save validation */ }\n    private void WriteHeader(BinaryWriter writer) { /* Header section */ }\n    private void WriteTiles(BinaryWriter writer) { /* Tile data section */ }\n    private void WritePortals(BinaryWriter writer) { /* Portal data section */ }\n    // Additional write methods for all data sections\n}\n```",
+        "testStrategy": "Comprehensive testing approach covering all aspects of bidirectional DMAP file operations:\n\n**Data Integrity Testing:**\n1. Load original DMAP file, modify tile properties, save to new file\n2. Reload saved file and verify all changes persist correctly\n3. Compare binary structure with original using hex comparison tools\n4. Validate that game client can load and render saved DMAP files\n5. Test coordinate conversion accuracy by verifying portal positions\n\n**Format Compatibility Testing:**\n1. Test both compressed (.7z) and uncompressed (.dmap) output formats\n2. Verify SharpCompress archive creation matches original structure\n3. Test file size and compression ratio consistency\n4. Validate metadata preservation in archived files\n5. Ensure proper file extensions and MIME types\n\n**Error Handling & Edge Cases:**\n1. Test save operations with insufficient disk space\n2. Verify behavior with read-only destination directories\n3. Test rollback functionality on write failures\n4. Validate error reporting for corrupted data structures\n5. Test concurrent access scenarios and file locking\n\n**Performance & Scalability:**\n1. Benchmark save operations with large map files (>10MB)\n2. Test memory usage during export operations\n3. Verify performance with multiple simultaneous save operations\n4. Test export operations with complex scene layer data\n\n**Cross-Platform Validation:**\n1. Test file creation on different operating systems\n2. Verify path handling with various directory structures\n3. Test archive creation with different compression settings\n4. Validate file permissions and access control",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Core Save/Export Methods",
+            "description": "Create fundamental Save() and Export() methods in DmapFile class with comprehensive parameter handling and file path management",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Implement the main entry points for save/export functionality with proper method signatures, parameter validation, and path handling. Include overloads for different output scenarios (in-place save, save-as, compression options).",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement Binary DMAP Writing",
+            "description": "Create WriteToDmap() method using BinaryWriterExtensions to write all DMAP data sections in proper binary format",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Implement comprehensive binary writing logic for all DMAP sections: header, tiles, portals, covers, scenes, effects, sounds. Use existing BinaryWriterExtensions for proper data type handling and maintain format compatibility.",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Implement SharpCompress Archive Creation",
+            "description": "Create WriteToArchive() method using SharpCompress to generate .7z compressed DMAP files",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Implement archive creation functionality using SharpCompress.Writers.SevenZip. Configure proper compression settings, handle archive metadata, and ensure compatibility with existing .7z DMAP files.",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Implement Coordinate Conversion for Export",
+            "description": "Add coordinate transformation logic to convert Godot coordinates back to DMAP format using CordConverter",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Implement proper coordinate conversion from Godot's coordinate system back to DMAP format. Ensure tile positions, portal coordinates, and scene layer positioning are accurately transformed using CordConverter utilities.",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Implement Data Integrity Validation",
+            "description": "Create comprehensive data validation system to ensure data integrity before and after save operations",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Implement ValidateDataIntegrity() method with checks for data completeness, coordinate validity, reference integrity, and format compliance. Include pre-save validation and post-save verification.",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Implement Comprehensive Error Handling",
+            "description": "Add robust error handling and recovery mechanisms for all save/export operations",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Implement comprehensive error handling covering file system errors, data validation failures, archive creation issues, and rollback mechanisms. Include detailed logging and user-friendly error messages.",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Implement Individual Data Section Writers",
+            "description": "Create specialized write methods for each DMAP data section (tiles, portals, covers, scenes, effects, sounds)",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Implement WriteHeader(), WriteTiles(), WritePortals(), WriteCovers(), WriteScenes(), WriteEffects(), WriteSounds(), and WriteSceneLayers() methods. Each method should handle the specific binary format requirements for its data section.",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Add File Format Options and Configuration",
+            "description": "Implement configuration options for output format, compression levels, and export settings",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Add support for various export configurations including compression levels, file format options (.dmap vs .7z), and custom export settings. Implement proper default values and validation for configuration parameters.",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 13,
+        "title": "Implement Scene and Cover Object Rendering",
+        "description": "Add support for rendering scene objects and cover elements from DMAP files with comprehensive 3D object placement, Y-sorting implementation, scene layer management, and cover object rendering integration",
+        "status": "pending",
+        "dependencies": [
+          5,
+          7
+        ],
+        "priority": "low",
+        "details": "Implement comprehensive scene and cover object rendering system based on Core/ classes: Cover.cs, SceneFile.cs, ScenePart.cs, SceneTile.cs, and TerrainScene.cs. Parse SceneFile data from DMAP archives to extract scene objects and their positioning data. Create sprite nodes for each scene object in the objectLayer using DMapRenderer architecture. Implement proper Y-sorting for depth ordering using Godot's YSort nodes or manual Z-index management. Load and convert associated DDS textures for scene objects using TextureConverter integration. Position objects using isometric coordinate conversion from CordConverter.cs. Handle transparency and layering for cover elements with proper blend modes. Implement scene layer management to organize different object types (terrain, objects, covers) in separate rendering layers. Support 3D object placement for scene elements that require height/depth positioning. Reference Game/5017/data/ directory for test assets including Scene/ subdirectory objects.",
+        "testStrategy": "Load maps with known scene objects (bridges, houses from Scene/ directory in Game/5017/data/), verify objects appear at correct positions with proper depth sorting. Test Y-sorting with overlapping objects at different isometric depths. Validate texture conversion for scene object DDS files. Confirm cover elements render with appropriate transparency and blend modes. Test scene layer separation and proper rendering order.",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Parse SceneFile and ScenePart Data",
+            "description": "Implement parsing of SceneFile.cs and ScenePart.cs data structures from DMAP files",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Create methods in DMapRenderer to parse SceneFile objects from DMAP archives. Extract ScenePart data including object positions, texture references, and layer information. Handle SceneTile data for individual scene elements. Integrate with existing DmapFile.cs archive reading functionality.",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement Cover Object Rendering",
+            "description": "Create rendering system for Cover.cs objects with transparency and layering support",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Implement Cover object parsing and rendering based on Cover.cs structure. Create sprite nodes with appropriate transparency settings. Handle cover element positioning using isometric coordinates. Implement proper blend modes for cover transparency effects. Support cover object layering and depth sorting.",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Create Scene Layer Management System",
+            "description": "Implement hierarchical scene layer organization for different object types",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Design and implement scene layer management using Godot's CanvasLayer or YSort nodes. Create separate layers for terrain, scene objects, and cover elements. Implement layer ordering and depth management. Ensure proper rendering order between different object types. Support dynamic layer visibility and management.",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Implement Y-Sorting for Depth Ordering",
+            "description": "Create proper Y-sorting system for isometric depth ordering of scene objects",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Implement Y-sorting using Godot's YSort node or manual Z-index management. Calculate proper sorting values based on isometric Y coordinates. Handle object depth ordering for overlapping scene elements. Support dynamic re-sorting when objects move or change. Integrate with TerrainScene.cs data for terrain-based depth calculations.",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Integrate 3D Object Placement",
+            "description": "Implement 3D positioning system for scene objects with height/depth support",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Create 3D object placement system using Vector3 coordinates from scene data. Convert 3D positions to appropriate 2D screen coordinates for isometric view. Handle object height offsets and depth positioning. Support elevation-based rendering for multi-level scene objects. Integrate with existing CordConverter.cs isometric coordinate system.",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Create ObjectLayer Integration",
+            "description": "Integrate scene object rendering with DMapRenderer objectLayer architecture",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Implement scene object creation within the existing objectLayer structure from DMapRenderer. Create sprite nodes for scene objects as children of objectLayer. Handle object positioning and scaling within the layer system. Support object removal and updating. Ensure compatibility with existing tile and portal rendering systems.",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Implement Scene Object Texture Loading",
+            "description": "Create texture loading and conversion system for scene object DDS files",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Integrate with TextureConverter.cs to load DDS textures for scene objects. Handle texture caching and management for scene elements. Support texture atlas and individual texture loading. Implement texture assignment to scene object sprites. Handle missing texture fallbacks and error cases.",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Test with Game Assets",
+            "description": "Comprehensive testing using Game/5017/data/ scene assets",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Test scene and cover object rendering using assets from Game/5017/data/ directory. Validate rendering of objects from Scene/ subdirectory. Test various scene object types including bridges, houses, and terrain features. Verify proper positioning, texturing, and depth sorting. Compare results with reference implementation behavior.",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 14,
+        "title": "Optimize Rendering Performance",
+        "description": "Implement comprehensive performance optimizations for large map rendering based on PRD Phase 7 Optimization requirements with specific performance targets: 60+ FPS rendering, <2 second load time, <500MB memory usage for 1000x1000 tile maps",
+        "status": "pending",
+        "dependencies": [
+          5,
+          13
+        ],
+        "priority": "low",
+        "details": "Implement comprehensive rendering performance optimization system following PRD Phase 7 Optimization Section 10 (lines 604-618) with strict performance targets:\n\n**Performance Targets (PRD 10.1):**\n- Map Loading: < 2 seconds for 1000x1000 tiles\n- Rendering: 60+ FPS with full map visible\n- Memory Usage: < 500MB for large maps\n\n**Core Optimization Strategies (PRD 10.2):**\n\n1. **Chunk Loading System**: Implement 256x256 tile chunk-based loading for maps larger than 256x256 tiles. Create ChunkManager class to handle dynamic loading/unloading of map chunks based on viewport position. Implement chunk boundaries with seamless transitions.\n\n2. **Texture Atlasing System**: Create TextureAtlas class to combine small textures into larger atlases, reducing draw calls significantly. Implement automatic texture packing algorithm and UV coordinate remapping for tiles and scene objects.\n\n3. **LOD (Level of Detail) System**: Implement distance-based LOD system to reduce detail at distance. Create multiple detail levels for tiles and scene objects based on camera distance. Use simplified meshes/sprites for distant objects.\n\n4. **Object Pooling**: Implement comprehensive object pooling for frequently used sprites, tiles, and scene objects. Create reusable sprite pools to avoid constant instantiation/destruction overhead.\n\n5. **Viewport Culling**: Add viewport culling system to avoid rendering off-screen tiles and objects. Implement frustum culling for camera view optimization.\n\n**Integration Requirements:**\n- Integrate with DMapRenderer architecture from Task 5\n- Utilize scene object rendering system from Task 13\n- Ensure compatibility with Core/ parsing classes from Task 2\n\n**Testing Resources:**\nUse Game/5017/map/ directory containing extensive test maps including large maps like 'island.DMap', 'desert.DMap', 'woods.DMap' for performance benchmarking and optimization validation.",
+        "testStrategy": "Comprehensive performance testing approach using Game/5017/map/ test resources:\n\n**Performance Profiling:**\n1. Use Godot profiler to measure rendering performance with large maps (island.DMap, desert.DMap, woods.DMap)\n2. Profile chunk loading performance with 1000x1000 tile scenarios\n3. Measure texture atlasing impact on draw calls reduction\n4. Test LOD system effectiveness at various camera distances\n5. Validate object pooling memory efficiency\n\n**Performance Benchmarks:**\n1. Verify 60+ FPS rendering with full map visible\n2. Confirm <2 second load times for large maps (1000x1000 tiles)\n3. Validate memory usage stays under 500MB with large maps\n4. Test chunk loading boundaries for seamless transitions\n5. Measure draw call reduction with texture atlasing\n\n**Stress Testing:**\n1. Load multiple large maps simultaneously\n2. Test rapid camera movement across chunk boundaries\n3. Verify LOD transitions are smooth without visual artifacts\n4. Test object pooling under high sprite creation/destruction scenarios\n\n**Regression Testing:**\n1. Ensure optimizations don't break existing rendering functionality\n2. Verify scene objects and covers still render correctly with optimizations\n3. Confirm import functionality remains intact with performance changes",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Chunk Loading System",
+            "description": "Create 256x256 tile chunk-based loading system for large maps",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Implement ChunkManager class to divide large maps into 256x256 chunks. Create dynamic loading/unloading based on viewport position with seamless chunk transitions.",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Develop Texture Atlasing System",
+            "description": "Create texture atlasing to combine small textures and reduce draw calls",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Implement TextureAtlas class with automatic texture packing algorithm. Add UV coordinate remapping for tiles and scene objects to use atlased textures.",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Implement LOD (Level of Detail) System",
+            "description": "Add distance-based LOD system to reduce detail at distance",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Create multiple detail levels for tiles and scene objects based on camera distance. Implement simplified meshes/sprites for distant objects with smooth transitions.",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Create Object Pooling System",
+            "description": "Implement object pooling for frequently used sprites and tiles",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Create comprehensive object pooling system for sprites, tiles, and scene objects. Implement reusable pools to avoid constant instantiation/destruction overhead.",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Add Viewport Culling",
+            "description": "Implement viewport culling to avoid rendering off-screen objects",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Add frustum culling system for camera view optimization. Implement efficient culling for tiles and scene objects outside viewport boundaries.",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Performance Testing and Benchmarking",
+            "description": "Conduct comprehensive performance testing using Game/5017/map/ resources",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Test all optimization systems with large maps from Game/5017/map/. Verify 60+ FPS, <2s load times, <500MB memory targets. Profile and optimize bottlenecks.",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Integration with Existing Systems",
+            "description": "Integrate optimization systems with DMapRenderer and scene rendering",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Ensure optimization systems work seamlessly with DMapRenderer architecture (Task 5) and scene object rendering (Task 13). Maintain compatibility with Core/ parsing classes.",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Performance Documentation and Monitoring",
+            "description": "Document optimization systems and create performance monitoring tools",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Create documentation for optimization systems. Implement performance monitoring tools to track FPS, memory usage, and load times during runtime.",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 15,
+        "title": "Create Comprehensive Test Suite",
+        "description": "Develop full test coverage for all plugin components following PRD Phase 6 Testing Strategy with 80%+ code coverage target, comprehensive test types (unit, integration, performance), GdUnit4Net framework usage, and Game/5017/ test assets integration",
+        "status": "pending",
+        "dependencies": [
+          11
+        ],
+        "priority": "medium",
+        "details": "Implement comprehensive testing strategy following PRD lines 503-601. Create .runsettings configuration for GdUnit4Net with GODOT_BIN environment variable. Organize tests into structured test classes:\n\n**Core Unit Tests** (No Godot runtime):\n- Tile.cs: Test NoAccess, Surface, Height properties with various input values\n- Portal.cs: Test PortalId, DestinationMap, DestinationPos properties\n- Cover.cs: Test cover data parsing and properties\n- CordConverter.cs: Data-driven coordinate conversion tests with test data points\n\n**Integration Tests** ([RequireGodotRuntime]):\n- DMapImporter: Test complete import pipeline with real DMAP files from Game/5017/map/map/\n- DMapRenderer: Test LoadFromDMap() with various map sizes, verify three-layer architecture\n- Texture conversion: Test DDS format handling with BCnEncoder.Net\n\n**Performance Tests**:\n- Map loading time benchmarks (< 2 second target)\n- Memory usage validation (< 500MB target)\n- Rendering FPS tests (60+ FPS target)\n\n**Editor Tests**:\n- DMapEditorDock UI interaction tests\n- Property editing validation\n- Plugin registration/deregistration\n\n**Test Organization by Component**:\n- Core/: DMapParserTests.cs, CordConverterTests.cs\n- Importers/: DMapImporterTests.cs, TextureConversionTests.cs\n- Nodes/: DMapRendererTests.cs, PerformanceTests.cs\n- Editor/: EditorDockTests.cs, PluginTests.cs\n\nUse Game/5017/map/map/ DMAP files for realistic testing scenarios. Implement data-driven tests with [DataPoint] attribute for coordinate conversions and various input scenarios.",
+        "testStrategy": "Configure .runsettings with GODOT_BIN path. Run 'dotnet test' for full suite execution. Generate code coverage report targeting 80%+ coverage. Use GdUnit4Net assertions (AssertThat().IsEqual(), IsNotNull()). Test with real Game/5017/ assets including small maps (newbie.DMap), medium maps (canyon.DMap), and large maps (star.DMap). Verify critical paths: parsing accuracy, import success, rendering performance, UI responsiveness. Ensure no regression in existing functionality through comprehensive integration testing.",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-08-19T22:29:59.765Z",
+      "updated": "2025-08-19T22:29:59.765Z",
+      "description": "Tasks for master context"
+    }
+  }
+}

@@ -1,0 +1,714 @@
+# DMAP to Godot 4.4 Integration Plan - Complete Implementation Guide
+
+## Table of Contents
+
+1. [Project Overview](#1-project-overview)
+2. [Goals & Deliverables](#2-goals--deliverables)
+3. [Architecture Overview](#3-architecture-overview)
+4. [Phase 1: Project Setup](#4-phase-1-project-setup)
+5. [Phase 2: Core Migration](#5-phase-2-core-migration)
+6. [Phase 3: Plugin Development](#6-phase-3-plugin-development)
+7. [Phase 4: Rendering System](#7-phase-4-rendering-system)
+8. [Phase 5: Editor Integration](#8-phase-5-editor-integration)
+9. [Phase 6: Testing Strategy](#9-phase-6-testing-strategy)
+10. [Phase 7: Optimization](#10-phase-7-optimization)
+11. [Success Criteria](#11-success-criteria)
+12. [Timeline & Milestones](#12-timeline--milestones)
+
+---
+
+## 1. Project Overview
+
+### Purpose
+
+Create a comprehensive Godot 4.4 plugin that enables direct loading, rendering, and editing of Conquer Online DMAP files, preserving all unique features while leveraging Godot's powerful editor and C# support.
+
+### Technical Approach
+
+- **Maximum Code Reuse**: ~70% of existing C# parsing code used directly
+- **Native Integration**: Seamless Godot editor workflow
+- **Type Safety**: Full C# 8.0+ features with .NET 8
+- **Performance**: Optimized for real-time editing
+
+### Key Technologies
+
+- **Godot 4.4** with C# support ([Documentation](https://docs.godotengine.org/en/stable/tutorials/scripting/c_sharp/index.html))
+- **.NET 8.0** runtime
+- **GdUnit4Net** for testing ([Documentation](https://github.com/mikeschulze/gdunit4net))
+- **SharpCompress** for archive handling (replacing SevenZipSharp)
+- **Original C# DMAP Parsing Code** for reference and adaptation could be found in [symlink](../Tiled2Dmap/)
+- **Godot.NET** for C# scripting support [Documentation](https://docs.godotengine.org/en/stable/tutorials/scripting/c_sharp/index.html)
+- **Game Client Assets** for DMAP files and resources [Link](../Game/5017/maps)
+
+---
+
+## 2. Goals & Deliverables
+
+### Primary Goals
+
+1. ✅ Direct DMAP file import without Tiled conversion
+2. ✅ Live editing capabilities in Godot editor
+3. ✅ Preserve all DMAP features (portals, covers, scenes, effects)
+4. ✅ Bidirectional save/load functionality
+5. ✅ High performance isometric rendering
+
+### Deliverables
+
+| Deliverable              | Description                                   | Success Metric                 |
+| ------------------------ | --------------------------------------------- | ------------------------------ |
+| **DMAP Importer Plugin** | Custom EditorImportPlugin for .dmap/.7z files | Successfully imports test maps |
+| **DMap Renderer Node**   | Custom Node2D for rendering maps              | 60+ FPS on average hardware    |
+| **Editor Tools**         | Live editing dock and inspectors              | All tile properties editable   |
+| **Test Suite**           | Comprehensive unit and integration tests      | 80%+ code coverage             |
+| **Documentation**        | User guide and API reference                  | Complete usage examples        |
+
+---
+
+## 3. Architecture Overview
+
+### Directory Structure
+
+```
+GodotDMapProject/
+├── project.godot
+├── GodotDMapProject.csproj
+├── .runsettings                    # Test configuration
+├── addons/
+│   └── dmap_importer/
+│       ├── plugin.cfg
+│       ├── DMapImporterPlugin.cs   # Main plugin entry
+│       ├── Core/                   # Direct copy from Tiled2Dmap
+│       │   ├── Dmap/              # All original parsing classes
+│       │   ├── Extensions/        # Binary reader extensions
+│       │   ├── Utility/           # Coordinate types
+│       │   └── Tiled/             # Tiled format support
+│       ├── Importers/
+│       │   ├── DMapImporter.cs    # EditorImportPlugin
+│       │   └── TextureConverter.cs # DDS to Godot conversion
+│       ├── Nodes/
+│       │   ├── DMapRenderer.cs    # Main rendering node
+│       │   └── DMapPortal.cs      # Portal interaction
+│       └── Editor/
+│           └── DMapEditorDock.cs   # Editor UI
+└── tests/
+    └── DMapTests.csproj
+```
+
+### Component Mapping
+
+| Original Component          | Godot Equivalent           | Reference                                                                                    |
+| --------------------------- | -------------------------- | -------------------------------------------------------------------------------------------- |
+| **BinaryReader Extensions** | Use as-is                  | [`BinaryReaderExtensions.cs`](Tiled2Dmap/Extensions/BinaryReaderExtensions.cs)               |
+| **DmapFile.cs**             | Use as-is (update archive) | [`DmapFile.cs`](Tiled2Dmap/Dmap/DmapFile.cs:41-76)                                           |
+| **CordConverter.cs**        | Use as-is                  | [`CordConverter.cs`](Tiled2Dmap/Dmap/CordConverter.cs:8-80)                                  |
+| **SpriteBatch**             | TileMap + Node2D           | [Godot TileMap](https://docs.godotengine.org/en/stable/classes/class_tilemap.html)           |
+| **Texture2D**               | ImageTexture               | [Godot ImageTexture](https://docs.godotengine.org/en/stable/classes/class_imagetexture.html) |
+| **SevenZipSharp**           | SharpCompress              | NuGet Package                                                                                |
+
+---
+
+## 4. Phase 1: Project Setup
+
+### 4.1 Create C# Project
+
+```xml
+<!-- GodotDMapProject.csproj -->
+<Project Sdk="Godot.NET.Sdk/4.4.0">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <RootNamespace>DMapImporter</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SharpCompress" Version="0.38.0" />
+    <PackageReference Include="BCnEncoder.Net" Version="2.1.0" />
+    <!-- Testing -->
+    <PackageReference Include="gdUnit4.api" Version="5.0.0" />
+    <PackageReference Include="gdUnit4.test.adapter" Version="3.0.0" />
+    <PackageReference Include="gdUnit4.analyzers" Version="1.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+</Project>
+```
+
+### 4.2 Plugin Configuration
+
+```ini
+# addons/dmap_importer/plugin.cfg
+[plugin]
+name="DMAP Importer & Editor"
+description="Direct loading and editing of Conquer Online DMAP files"
+author="Your Name"
+version="1.0.0"
+script="DMapImporterPlugin.cs"
+```
+
+---
+
+## 5. Phase 2: Core Migration
+
+### 5.1 Direct File Copies
+
+Copy these files **unchanged** from original project:
+
+- [`Tile.cs`](Tiled2Dmap/Dmap/Tile.cs) → `Core/Dmap/Tile.cs`
+- [`Portal.cs`](Tiled2Dmap/Dmap/Portal.cs) → `Core/Dmap/Portal.cs`
+- [`Cover.cs`](Tiled2Dmap/Dmap/Cover.cs) → `Core/Dmap/Cover.cs`
+- [`CordConverter.cs`](Tiled2Dmap/Dmap/CordConverter.cs) → `Core/Dmap/CordConverter.cs`
+- All [`Extensions/*.cs`](Tiled2Dmap/Extensions/) → `Core/Extensions/`
+- All [`Utility/*.cs`](Tiled2Dmap/Utility/) → `Core/Utility/`
+
+### 5.2 Archive Handler Update
+
+Update [`DmapFile.cs`](Tiled2Dmap/Dmap/DmapFile.cs:61-70) for SharpCompress:
+
+```csharp
+// Original (line 61-70)
+using SevenZip;
+// ...
+new SevenZipExtractor(this.DmapPath).ExtractFile(0, (Stream)memoryStream);
+
+// Replace with:
+using SharpCompress.Archives;
+using SharpCompress.Archives.SevenZip;
+// ...
+using (var archive = SevenZipArchive.Open(this.DmapPath))
+{
+    var entry = archive.Entries.First();
+    entry.WriteTo(memoryStream);
+}
+```
+
+---
+
+## 6. Phase 3: Plugin Development
+
+### 6.1 Main Plugin Class
+
+Based on [Godot EditorPlugin docs](https://docs.godotengine.org/en/stable/classes/class_editorplugin.html):
+
+```csharp
+#if TOOLS
+using Godot;
+using DMapImporter.Core.Dmap;
+
+[Tool]
+public partial class DMapImporterPlugin : EditorPlugin
+{
+    private DMapImporter dmapImporter;
+    private DMapEditorDock editorDock;
+
+    public override void _EnterTree()
+    {
+        // Register importer (See EditorImportPlugin example)
+        dmapImporter = new DMapImporter();
+        AddImportPlugin(dmapImporter);
+
+        // Add custom node type
+        var script = GD.Load<Script>("res://addons/dmap_importer/Nodes/DMapRenderer.cs");
+        var icon = GD.Load<Texture2D>("res://addons/dmap_importer/icons/dmap.svg");
+        AddCustomType("DMapRenderer", "Node2D", script, icon);
+
+        // Add editor dock
+        editorDock = new DMapEditorDock();
+        AddControlToDock(DockSlot.LeftUl, editorDock);
+    }
+
+    public override void _ExitTree()
+    {
+        RemoveImportPlugin(dmapImporter);
+        RemoveCustomType("DMapRenderer");
+        RemoveControlFromDocks(editorDock);
+    }
+}
+#endif
+```
+
+### 6.2 DMAP Importer
+
+Following [EditorImportPlugin pattern](https://docs.godotengine.org/en/stable/classes/class_editorimportplugin.html):
+
+```csharp
+#if TOOLS
+using Godot;
+using DMapImporter.Core.Dmap;
+
+[Tool]
+public partial class DMapImporter : EditorImportPlugin
+{
+    public override string _GetImporterName() => "dmap.importer";
+    public override string _GetVisibleName() => "DMAP Map File";
+    public override string[] _GetRecognizedExtensions() => new[] { "dmap", "7z", "zmap" };
+    public override string _GetSaveExtension() => "tscn";
+    public override string _GetResourceType() => "PackedScene";
+
+    public override Error _Import(string sourceFile, string savePath,
+        Godot.Collections.Dictionary options,
+        Godot.Collections.Array<string> platformVariants,
+        Godot.Collections.Array<string> genFiles)
+    {
+        // Use existing parser from DmapFile.cs
+        var dmap = new DmapFile(sourceFile);
+
+        // Create scene structure
+        var renderer = new DMapRenderer();
+        renderer.Name = Path.GetFileNameWithoutExtension(sourceFile);
+        renderer.LoadFromDMap(dmap);
+
+        // Save as scene
+        var packedScene = new PackedScene();
+        packedScene.Pack(renderer);
+
+        return ResourceSaver.Save(packedScene, $"{savePath}.{_GetSaveExtension()}");
+    }
+}
+#endif
+```
+
+---
+
+## 7. Phase 4: Rendering System
+
+### 7.1 DMap Renderer Node
+
+Implements isometric rendering using [Godot's TileMap](https://docs.godotengine.org/en/stable/classes/class_tilemap.html):
+
+```csharp
+using Godot;
+using DMapImporter.Core.Dmap;
+
+[Tool]
+public partial class DMapRenderer : Node2D
+{
+    private DmapFile dmapData;
+    private TileMap backgroundLayer;
+    private TileMap terrainLayer;
+    private Node2D objectLayer;
+
+    public void LoadFromDMap(DmapFile dmap)
+    {
+        dmapData = dmap;
+        CreateLayers();
+        PopulateTiles();
+        PlaceObjects();
+    }
+
+    private void CreateLayers()
+    {
+        // Background puzzle layer
+        backgroundLayer = new TileMap();
+        backgroundLayer.Name = "Background";
+        backgroundLayer.TileSet = CreatePuzzleTileSet();
+        backgroundLayer.ZIndex = 0;
+        AddChild(backgroundLayer);
+
+        // Terrain layer with custom data
+        terrainLayer = new TileMap();
+        terrainLayer.Name = "Terrain";
+        terrainLayer.TileSet = CreateTerrainTileSet();
+        terrainLayer.ZIndex = 1;
+        AddChild(terrainLayer);
+
+        // Objects with Y-sorting
+        objectLayer = new Node2D();
+        objectLayer.Name = "Objects";
+        objectLayer.YSortEnabled = true;
+        objectLayer.ZIndex = 2;
+        AddChild(objectLayer);
+    }
+
+    private TileSet CreateTerrainTileSet()
+    {
+        var tileSet = new TileSet();
+        tileSet.TileShape = TileSet.TileShapeEnum.Isometric;
+        tileSet.TileSize = new Vector2I(64, 32);
+
+        // Add custom data layers (from Tile.cs structure)
+        tileSet.AddCustomDataLayer();
+        tileSet.SetCustomDataLayerName(0, "no_access");
+        tileSet.SetCustomDataLayerType(0, Variant.Type.Bool);
+
+        tileSet.AddCustomDataLayer();
+        tileSet.SetCustomDataLayerName(1, "surface");
+        tileSet.SetCustomDataLayerType(1, Variant.Type.Int);
+
+        tileSet.AddCustomDataLayer();
+        tileSet.SetCustomDataLayerName(2, "height");
+        tileSet.SetCustomDataLayerType(2, Variant.Type.Int);
+
+        return tileSet;
+    }
+
+    private void PopulateTiles()
+    {
+        // Using existing tile data from DmapFile
+        for (int y = 0; y < dmapData.SizeTiles.Height; y++)
+        {
+            for (int x = 0; x < dmapData.SizeTiles.Width; x++)
+            {
+                var tile = dmapData.TileSet[x, y];
+                var coords = new Vector2I(x, y);
+
+                terrainLayer.SetCell(0, coords, 0, Vector2I.Zero);
+
+                // Set custom properties from Tile.cs
+                var tileData = terrainLayer.GetCellTileData(0, coords);
+                if (tileData != null)
+                {
+                    tileData.SetCustomData("no_access", tile.NoAccess == 1);
+                    tileData.SetCustomData("surface", (int)tile.Surface);
+                    tileData.SetCustomData("height", (int)tile.Height);
+                }
+            }
+        }
+    }
+}
+```
+
+### 7.2 Texture Conversion
+
+Convert DDS textures using existing [`DDSLoader.cs`](Tiled2Dmap/ImageHelp/DDSLoader.cs):
+
+```csharp
+public static class TextureConverter
+{
+    public static ImageTexture ConvertDDSToTexture(string ddsPath)
+    {
+        // Use existing DDSLoader logic
+        var pixelData = DDSLoader.LoadDDS(ddsPath);
+
+        var image = Image.CreateFromData(
+            pixelData.Width,
+            pixelData.Height,
+            false,
+            Image.Format.Rgba8,
+            pixelData.Data
+        );
+
+        return ImageTexture.CreateFromImage(image);
+    }
+}
+```
+
+---
+
+## 8. Phase 5: Editor Integration
+
+### 8.1 Editor Dock
+
+Based on [EditorPlugin dock example](https://docs.godotengine.org/en/stable/tutorials/plugins/editor/making_plugins.html):
+
+```csharp
+#if TOOLS
+using Godot;
+
+[Tool]
+public partial class DMapEditorDock : Control
+{
+    private DMapRenderer currentMap;
+    private SpinBox heightEditor;
+    private OptionButton surfaceSelector;
+    private CheckBox walkableToggle;
+
+    public override void _Ready()
+    {
+        CustomMinimumSize = new Vector2(250, 0);
+
+        var vbox = new VBoxContainer();
+        AddChild(vbox);
+
+        // Tile properties section
+        vbox.AddChild(new Label() { Text = "Tile Properties" });
+
+        // Height editor (from Tile.Height)
+        heightEditor = new SpinBox();
+        heightEditor.MinValue = -100;
+        heightEditor.MaxValue = 100;
+        heightEditor.ValueChanged += OnHeightChanged;
+        vbox.AddChild(heightEditor);
+
+        // Surface type (from Tile.Surface)
+        surfaceSelector = new OptionButton();
+        surfaceSelector.AddItem("Grass");
+        surfaceSelector.AddItem("Stone");
+        surfaceSelector.AddItem("Water");
+        surfaceSelector.Selected += OnSurfaceChanged;
+        vbox.AddChild(surfaceSelector);
+
+        // Walkable toggle (from Tile.NoAccess)
+        walkableToggle = new CheckBox();
+        walkableToggle.Text = "Walkable";
+        walkableToggle.Toggled += OnWalkableToggled;
+        vbox.AddChild(walkableToggle);
+    }
+
+    private void OnHeightChanged(double value)
+    {
+        // Update selected tile's height
+        if (currentMap != null)
+        {
+            var selectedTile = GetSelectedTile();
+            UpdateTileProperty(selectedTile, "height", (int)value);
+        }
+    }
+}
+#endif
+```
+
+### 8.2 Portal System
+
+Implement [`Portal.cs`](Tiled2Dmap/Dmap/Portal.cs) as interactive Area2D:
+
+```csharp
+public partial class DMapPortal : Area2D
+{
+    [Export] public uint PortalId { get; set; }
+    [Export] public string DestinationMap { get; set; }
+    [Export] public Vector2I DestinationPos { get; set; }
+
+    public override void _Ready()
+    {
+        // Visual indicator
+        var sprite = new Sprite2D();
+        sprite.Texture = GD.Load<Texture2D>("res://addons/dmap_importer/icons/portal.png");
+        AddChild(sprite);
+
+        // Collision
+        var collision = new CollisionShape2D();
+        collision.Shape = new CircleShape2D() { Radius = 32 };
+        AddChild(collision);
+
+        // Connect signal
+        BodyEntered += OnBodyEntered;
+    }
+
+    private void OnBodyEntered(Node2D body)
+    {
+        if (body.IsInGroup("player"))
+        {
+            // Trigger map transition
+            GetTree().ChangeSceneToFile($"res://maps/{DestinationMap}.tscn");
+        }
+    }
+}
+```
+
+---
+
+## 9. Phase 6: Testing Strategy
+
+### 9.1 Test Configuration
+
+Create `.runsettings` for [GdUnit4Net](https://github.com/mikeschulze/gdunit4net/blob/master/TestAdapter/README.md):
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+    <RunConfiguration>
+        <EnvironmentVariables>
+            <GODOT_BIN>path/to/Godot_v4.4-stable_mono.exe</GODOT_BIN>
+        </EnvironmentVariables>
+    </RunConfiguration>
+
+    <GdUnit4>
+        <DisplayName>FullyQualifiedName</DisplayName>
+        <CaptureStdOut>true</CaptureStdOut>
+    </GdUnit4>
+</RunSettings>
+```
+
+### 9.2 Test Suite Structure
+
+Following [GdUnit4Net patterns](https://github.com/mikeschulze/gdunit4net/blob/master/README.md):
+
+```csharp
+using GdUnit4;
+using static GdUnit4.Assertions;
+
+[TestSuite]
+public class DMapParserTests
+{
+    // Logic tests - no Godot runtime needed
+    [TestCase]
+    public void ParsesTileDataCorrectly()
+    {
+        var tile = new Tile(1, 2, 10);
+        AssertThat(tile.NoAccess).IsEqual(1);
+        AssertThat(tile.Surface).IsEqual(2);
+        AssertThat(tile.Height).IsEqual(10);
+    }
+
+    // Godot-dependent tests
+    [TestCase]
+    [RequireGodotRuntime]
+    public void CreatesValidTileMap()
+    {
+        var renderer = new DMapRenderer();
+        var dmap = LoadTestDMap();
+        renderer.LoadFromDMap(dmap);
+
+        AssertThat(renderer.GetChild<TileMap>(0)).IsNotNull();
+    }
+
+    // Data-driven tests
+    [TestCase]
+    [DataPoint(nameof(CoordinateTestData))]
+    public void ConvertsCoordinatesCorrectly(int x, int y, int expectedWorldX, int expectedWorldY)
+    {
+        var converter = new CordConverter(new Size(100, 100), new Size(1024, 1024));
+        var world = converter.Cell2World(new Point(x, y));
+
+        AssertThat(world.X).IsEqual(expectedWorldX);
+        AssertThat(world.Y).IsEqual(expectedWorldY);
+    }
+
+    public static IEnumerable<object[]> CoordinateTestData => new[]
+    {
+        new object[] { 0, 0, 3200, 16 },
+        new object[] { 50, 50, 3200, 1616 },
+        new object[] { 100, 0, 6400, 1616 }
+    };
+}
+```
+
+### 9.3 Integration Tests
+
+```csharp
+[TestSuite]
+[RequireGodotRuntime]
+public class DMapIntegrationTests
+{
+    [TestCase]
+    public void ImportsCompleteMap()
+    {
+        var importer = new DMapImporter();
+        var result = importer._Import(
+            "test_maps/test.dmap",
+            "res://imported",
+            new Godot.Collections.Dictionary(),
+            new Godot.Collections.Array<string>(),
+            new Godot.Collections.Array<string>()
+        );
+
+        AssertThat(result).IsEqual(Error.Ok);
+        AssertThat(File.Exists("res://imported.tscn")).IsTrue();
+    }
+}
+```
+
+---
+
+## 10. Phase 7: Optimization
+
+### 10.1 Performance Targets
+
+- **Map Loading**: < 2 seconds for 1000x1000 tiles
+- **Rendering**: 60+ FPS with full map visible
+- **Memory**: < 500MB for large maps
+
+### 10.2 Optimization Strategies
+
+1. **Chunk Loading**: Divide large maps into 256x256 chunks
+2. **Texture Atlasing**: Combine small textures
+3. **LOD System**: Reduce detail at distance
+4. **Object Pooling**: Reuse sprite instances
+
+---
+
+## 11. Success Criteria
+
+### Functional Requirements
+
+- [x] Import .dmap, .7z, .zmap files
+- [x] Render isometric tiles correctly
+- [x] Display all map objects (portals, covers, scenes)
+- [x] Edit tile properties in real-time
+- [x] Save changes back to DMAP format
+
+### Performance Requirements
+
+- [x] 60+ FPS on mid-range hardware
+- [x] < 2 second load time for average maps
+- [x] < 500MB memory usage
+
+### Quality Requirements
+
+- [x] 80%+ test coverage
+- [x] No memory leaks
+- [x] Stable editor integration
+
+---
+
+## 12. Timeline & Milestones
+
+### Week 1: Foundation (Days 1-7)
+
+- [ ] Set up Godot project with C# support
+- [ ] Copy core parsing classes
+- [ ] Update archive handling to SharpCompress
+- [ ] Basic plugin structure
+
+### Week 2: Import Pipeline (Days 8-14)
+
+- [ ] Implement DMapImporter
+- [ ] Create TileSet from puzzle data
+- [ ] Convert DDS textures
+- [ ] Generate basic scenes
+
+### Week 3: Rendering (Days 15-21)
+
+- [ ] Implement DMapRenderer node
+- [ ] Add isometric TileMap support
+- [ ] Coordinate conversion system
+- [ ] Object placement
+
+### Week 4: Editor Tools (Days 22-28)
+
+- [ ] Create editor dock
+- [ ] Tile property editing
+- [ ] Live preview
+- [ ] Portal system
+
+### Week 5: Testing & Polish (Days 29-35)
+
+- [ ] Write comprehensive tests
+- [ ] Performance optimization
+- [ ] Bug fixes
+- [ ] Documentation
+
+---
+
+## References
+
+### Godot Documentation
+
+- [C# in Godot](https://docs.godotengine.org/en/stable/tutorials/scripting/c_sharp/index.html)
+- [EditorImportPlugin](https://docs.godotengine.org/en/stable/classes/class_editorimportplugin.html)
+- [TileMap](https://docs.godotengine.org/en/stable/classes/class_tilemap.html)
+- [Custom Resources](https://docs.godotengine.org/en/stable/tutorials/scripting/resources.html)
+
+### Original Code References
+
+- [DmapFile.cs](Tiled2Dmap/Dmap/DmapFile.cs) - Core parsing logic
+- [CordConverter.cs](Tiled2Dmap/Dmap/CordConverter.cs) - Isometric math
+- [DmapFileRender.cs](Tiled2Dmap/Preview/Render/DmapFileRender.cs) - Rendering order
+- [Tile.cs](Tiled2Dmap/Dmap/Tile.cs) - Tile data structure
+
+### Testing
+
+- [GdUnit4Net Documentation](https://github.com/mikeschulze/gdunit4net)
+- [Test Adapter Configuration](https://github.com/mikeschulze/gdunit4net/blob/master/TestAdapter/README.md)
+
+---
+
+## Next Steps
+
+1. **Immediate Action**: Create Godot project and add C# support
+2. **First Milestone**: Get basic DMAP file parsing working
+3. **Validation**: Load a test map and verify tile data
+4. **Iteration**: Build features incrementally with tests
+
+This plan provides a complete roadmap from the existing C# codebase to a fully functional Godot 4.4 plugin, maximizing code reuse while leveraging Godot's powerful editor capabilities.
