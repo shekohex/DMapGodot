@@ -80,7 +80,7 @@
         "id": 2,
         "title": "Copy Core DMAP Parsing Classes",
         "description": "Migrate unchanged core parsing classes from Tiled2Dmap directory into the plugin's Core folder structure following PRD Phase 2 Core Migration specifications (Section 5.1, lines 151-163)",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           1
         ],
@@ -92,7 +92,7 @@
             "id": 1,
             "title": "Create Core directory structure",
             "description": "Create the Core/ folder hierarchy under addons/dmap_importer/ following PRD directory layout",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "details": "Create directories: Core/Dmap/, Core/Extensions/, Core/Utility/ as specified in PRD lines 80-87",
             "testStrategy": ""
@@ -101,7 +101,7 @@
             "id": 2,
             "title": "Copy core DMAP parsing classes",
             "description": "Copy Tile.cs, Portal.cs, Cover.cs, CordConverter.cs from Tiled2Dmap/Dmap/ to Core/Dmap/",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "details": "Direct file copies as specified in PRD lines 157-160. These files should remain unchanged except for namespace updates.",
             "testStrategy": ""
@@ -110,7 +110,7 @@
             "id": 3,
             "title": "Copy Extensions classes",
             "description": "Copy all extension files from Tiled2Dmap/Extensions/ to Core/Extensions/",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "details": "Copy BinaryReaderExtensions.cs, BinaryWriterExtensions.cs, ByteExtensions.cs as specified in PRD line 161. Component mapping (PRD line 101) indicates these should be used as-is.",
             "testStrategy": ""
@@ -119,7 +119,7 @@
             "id": 4,
             "title": "Copy Utility classes",
             "description": "Copy all utility files from Tiled2Dmap/Utility/ to Core/Utility/",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "details": "Copy all .cs files including Size.cs, PixelPosition.cs, TilePosition.cs, TileOffset.cs, PixelOffset.cs, ClientResource.cs, etc. as specified in PRD line 162.",
             "testStrategy": ""
@@ -128,7 +128,7 @@
             "id": 5,
             "title": "Copy additional scene classes",
             "description": "Copy Effect.cs, Sound.cs, SceneFile.cs, ScenePart.cs, SceneTile.cs, TerrainScene.cs",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "details": "Copy additional parsing classes from Tiled2Dmap/Dmap/ that are needed for complete scene parsing functionality.",
             "testStrategy": ""
@@ -137,7 +137,7 @@
             "id": 6,
             "title": "Update namespaces",
             "description": "Update root namespace from Tiled2Dmap.* to DMapImporter.Core.*",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "details": "Preserve original internal namespaces but update the root namespace in all copied files. Update using directives where necessary to maintain proper references.",
             "testStrategy": ""
@@ -146,7 +146,7 @@
             "id": 7,
             "title": "Verify compilation",
             "description": "Build project to ensure all copied files compile without errors",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "details": "Run 'dotnet build' to verify no compilation errors after namespace updates and file copying. Resolve any missing references or namespace issues.",
             "testStrategy": ""
@@ -155,7 +155,7 @@
             "id": 8,
             "title": "Create basic unit tests",
             "description": "Create unit tests for core classes to verify proper instantiation",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "details": "Create GdUnit4Net tests to verify Tile, Portal, and Cover classes can be instantiated and basic properties are accessible. This validates the migration was successful.",
             "testStrategy": ""
@@ -987,7 +987,7 @@
     ],
     "metadata": {
       "created": "2025-08-19T22:29:59.765Z",
-      "updated": "2025-08-20T00:39:55.513Z",
+      "updated": "2025-08-20T00:49:58.019Z",
       "description": "Tasks for master context"
     }
   }
