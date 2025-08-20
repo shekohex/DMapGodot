@@ -15,7 +15,7 @@ namespace DMapImporter.Core.Dmap
     public class DmapFile
     {
         private static readonly ILogger<DmapFile> _logger;
-        
+
         static DmapFile()
         {
             var loggerFactory = DMapLoggerFactory.Instance;
@@ -112,9 +112,9 @@ namespace DMapImporter.Core.Dmap
                 this.TileSet = new Tile[this.SizeTiles.Width, this.SizeTiles.Height];
 
                 uint val = BitConverter.ToUInt32(this.Header, 4);
-                _logger.LogDebug("Path: {dmapPath}, Version: {mapVersion}, Header: {headerStr}, Val {val}", 
+                _logger.LogDebug("Path: {dmapPath}, Version: {mapVersion}, Header: {headerStr}, Val {val}",
                     DmapPath, MapVersion, headerStr, val);
-                
+
                 if (IsNew && MapVersion < 1005) _logger.LogDebug("NEW < 1005");
                 for (int tileY = 0; tileY < this.SizeTiles.Height; tileY++)
                 {

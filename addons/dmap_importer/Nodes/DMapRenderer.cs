@@ -10,21 +10,21 @@ namespace DMapImporter.Nodes
     {
         private CordConverter _converter;
         private Vector2I _mapSize;
-        
+
         public CoordinateHelper(DmapFile dmapFile)
         {
             var dmapSize = new System.Drawing.Size(
                 (int)dmapFile.SizeTiles.Width,
                 (int)dmapFile.SizeTiles.Height
             );
-            
+
             // Background size will be calculated from puzzle file
             var bgSize = new System.Drawing.Size(256, 256); // Placeholder
-            
+
             _converter = new CordConverter(dmapSize, bgSize);
             _mapSize = new Vector2I(dmapSize.Width, dmapSize.Height);
         }
-        
+
         public Vector2 TileToLocal(int x, int y)
         {
             var worldPos = _converter.Cell2World(
@@ -32,7 +32,7 @@ namespace DMapImporter.Nodes
             );
             return new Vector2(worldPos.X, worldPos.Y);
         }
-        
+
         public Vector2I LocalToTile(Vector2 localPos)
         {
             var cellPos = _converter.World2Cell(
@@ -48,13 +48,13 @@ namespace DMapImporter.Nodes
         [Export] public string DMapPath { get; set; } = string.Empty;
         [Export] public Vector2I MapSize { get; set; }
         [Export] public int TileSize { get; set; } = 32;
-        
+
         private DmapFile? _dmapFile;
         private TileMapLayer? _backgroundLayer;
         private TileMapLayer? _terrainLayer;
         private Node2D? _objectLayer;
         private CoordinateHelper? _coordinateHelper;
-        
+
         public override void _Ready()
         {
             if (Engine.IsEditorHint())
@@ -62,7 +62,7 @@ namespace DMapImporter.Nodes
                 SetNotifyTransform(true);
             }
         }
-        
+
         public void LoadFromDMap(DmapFile dmap)
         {
             if (dmap == null)
@@ -70,19 +70,19 @@ namespace DMapImporter.Nodes
                 GD.PrintErr("Cannot load null DmapFile");
                 return;
             }
-            
+
             _dmapFile = dmap;
             DMapPath = dmap.DmapPath;
             MapSize = new Vector2I((int)dmap.SizeTiles.Width, (int)dmap.SizeTiles.Height);
-            
+
             // Initialize coordinate helper
             _coordinateHelper = new CoordinateHelper(dmap);
-            
+
             ClearChildren();
             CreateLayers();
             PopulateFromDMap();
         }
-        
+
         private void ClearChildren()
         {
             foreach (Node child in GetChildren())
@@ -90,7 +90,7 @@ namespace DMapImporter.Nodes
                 child.QueueFree();
             }
         }
-        
+
         private void CreateLayers()
         {
             // Background Layer (Puzzle pieces)
@@ -99,21 +99,21 @@ namespace DMapImporter.Nodes
             _backgroundLayer.ZIndex = 0;
             _backgroundLayer.Enabled = true;
             AddChild(_backgroundLayer);
-            
+
             // Terrain Layer (Walkable/Surface data)
             _terrainLayer = new TileMapLayer();
             _terrainLayer.Name = "TerrainLayer";
             _terrainLayer.ZIndex = 1;
             _terrainLayer.Enabled = true;
             AddChild(_terrainLayer);
-            
+
             // Object Layer (3D objects with Y-sorting)
             _objectLayer = new Node2D();
             _objectLayer.Name = "ObjectLayer";
             _objectLayer.ZIndex = 2;
             _objectLayer.YSortEnabled = true;
             AddChild(_objectLayer);
-            
+
             // Set owner for editor visibility
             if (Engine.IsEditorHint())
             {
@@ -125,84 +125,84 @@ namespace DMapImporter.Nodes
                     _objectLayer.Owner = root;
                 }
             }
-            
+
             // Create and assign TileSets
             var tileSet = CreateBasicIsometricTileSet();
             AddCustomDataLayers(tileSet);
-            
+
             _backgroundLayer.TileSet = tileSet;
             _terrainLayer.TileSet = tileSet;
         }
-        
+
         private TileSet CreateBasicIsometricTileSet()
         {
             var tileSet = new TileSet();
-            
+
             // Isometric configuration per PRD
             tileSet.TileShape = TileSet.TileShapeEnum.Isometric;
             tileSet.TileSize = new Vector2I(64, 32);
             tileSet.TileLayout = TileSet.TileLayoutEnum.Stacked;
-            
+
             // Note: Atlas source will be added in Task 6
             // For now, just create empty tileset structure
-            
+
             return tileSet;
         }
-        
+
         private void AddCustomDataLayers(TileSet tileSet)
         {
             // Layer 0: Walkability (inverse of NoAccess)
             tileSet.AddCustomDataLayer();
             tileSet.SetCustomDataLayerName(0, "walkable");
             tileSet.SetCustomDataLayerType(0, Variant.Type.Bool);
-            
+
             // Layer 1: Surface type
             tileSet.AddCustomDataLayer();
             tileSet.SetCustomDataLayerName(1, "surface");
             tileSet.SetCustomDataLayerType(1, Variant.Type.Int);
-            
+
             // Layer 2: Height value
             tileSet.AddCustomDataLayer();
             tileSet.SetCustomDataLayerName(2, "height");
             tileSet.SetCustomDataLayerType(2, Variant.Type.Int);
         }
-        
+
         private void PopulateFromDMap()
         {
             if (_dmapFile == null) return;
-            
+
             PlaceTerrainTiles();
             PlaceObjectMarkers();
         }
-        
+
         private void PlaceTerrainTiles()
         {
             if (_dmapFile == null || _terrainLayer == null) return;
-            
+
             for (int x = 0; x < _dmapFile.SizeTiles.Width; x++)
             {
                 for (int y = 0; y < _dmapFile.SizeTiles.Height; y++)
                 {
                     var tile = _dmapFile.TileSet[x, y];
-                    
+
                     // Only place if accessible
                     if (tile.Access > 0)
                     {
                         var coords = new Vector2I(x, y);
-                        
+
                         // Place empty tile (source_id 0 will be added in Task 6)
                         _terrainLayer.SetCell(coords, -1, Vector2I.Zero, 0);
-                        
+
                         // Note: Custom data will be set when we have actual tiles
                     }
                 }
             }
         }
-        
+
         private void PlaceObjectMarkers()
         {
             if (_dmapFile == null || _objectLayer == null) return;
-            
+
             // Place simple markers for portals
             foreach (var portal in _dmapFile.Portals)
             {
@@ -213,13 +213,13 @@ namespace DMapImporter.Nodes
                     portal.Position.Y * 32
                 );
                 _objectLayer.AddChild(marker);
-                
+
                 if (Engine.IsEditorHint())
                 {
                     marker.Owner = GetTree()?.EditedSceneRoot;
                 }
             }
-            
+
             // Place markers for covers
             foreach (var cover in _dmapFile.Covers)
             {
@@ -230,14 +230,14 @@ namespace DMapImporter.Nodes
                     cover.Position.Y * 32
                 );
                 _objectLayer.AddChild(marker);
-                
+
                 if (Engine.IsEditorHint())
                 {
                     marker.Owner = GetTree()?.EditedSceneRoot;
                 }
             }
         }
-        
+
         public DmapFile? GetDMapFile() => _dmapFile;
     }
 }

@@ -12,6 +12,6 @@ namespace DMapImporter.Core.Dmap
         public uint Thickness { get; init; }
         public TileOffset TileOffset { get; init; }
         public int OffsetElevation { get; init; }
-        public SceneTile[,] Tiles { get; set; } = new SceneTile[0,0];
+        public SceneTile[,] Tiles { get; set; } = new SceneTile[0, 0];
     }
 }

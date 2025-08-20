@@ -105,7 +105,7 @@ namespace DMapImporter.Core.Logging
         public static DMapLoggingOptions CreateGodotOptimizedOptions()
         {
             var isGodot = IsGodotAvailable();
-            
+
             return new DMapLoggingOptions
             {
                 MinimumLevel = LogLevel.Information,

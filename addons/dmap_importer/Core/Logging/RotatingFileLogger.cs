@@ -23,7 +23,7 @@ namespace DMapImporter.Core.Logging
         public IDisposable? BeginScope<TState>(TState state) where TState : notnull
             => new LoggerScope(state);
 
-        public bool IsEnabled(LogLevel logLevel) 
+        public bool IsEnabled(LogLevel logLevel)
             => logLevel >= _options.MinimumLevel;
 
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
@@ -88,7 +88,7 @@ namespace DMapImporter.Core.Logging
         private void WriteToFile(string logEntry)
         {
             EnsureCurrentLogFile();
-            
+
             if (_currentLogFilePath == null)
                 return;
 
@@ -162,14 +162,14 @@ namespace DMapImporter.Core.Logging
             var timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff");
             var level = GetLogLevelString(logLevel);
             var eventIdStr = eventId.Id != 0 ? $"[{eventId.Id}]" : "";
-            
+
             var logEntry = $"{timestamp} [{level}] {categoryName}{eventIdStr}: {message}";
-            
+
             if (exception != null)
             {
                 logEntry += Environment.NewLine + exception.ToString();
             }
-            
+
             return logEntry;
         }
 

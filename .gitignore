@@ -1,6 +1,7 @@
 # Godot 4+ specific ignores
 .godot/
 /android/
+gdunit4_testadapter_v5/
 
 # Logs
 logs

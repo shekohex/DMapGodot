@@ -43,13 +43,13 @@ namespace DMapImporter.Tests
         {
             var factory = DMapLoggerFactory.CreateDefault();
             AssertThat(factory).IsNotNull();
-            
+
             var logger = factory.CreateLogger("TestCategory");
             AssertThat(logger).IsNotNull();
-            
+
             var typedLogger = factory.CreateLogger<LoggingTests>();
             AssertThat(typedLogger).IsNotNull();
-            
+
             factory.Dispose();
         }
 
@@ -57,14 +57,14 @@ namespace DMapImporter.Tests
         public void TestModernLoggingMethods()
         {
             AssertThat(_logger).IsNotNull();
-            
+
             // Test that modern logging methods work
             _logger!.LogDebug("Test debug message");
             _logger!.LogInformation("Test info message");
             _logger!.LogWarning("Test warning message");
             _logger!.LogError("Test error message");
             _logger!.LogCritical("Test critical message");
-            
+
             // Should not throw exceptions
             AssertThat(true).IsTrue();
         }
@@ -79,10 +79,10 @@ namespace DMapImporter.Tests
                 EnableConsoleLogging = true,
                 EnableFileLogging = false
             };
-            
+
             var factory = DMapLoggerFactory.Create(options);
             AssertThat(factory).IsNotNull();
-            
+
             factory.Dispose();
         }
 
@@ -115,10 +115,10 @@ namespace DMapImporter.Tests
         public void TestLoggingWithParameters()
         {
             AssertThat(_logger).IsNotNull();
-            
+
             _logger!.LogInformation("Test message with parameter: {param}", "testValue");
             _logger!.LogError("Error with multiple params: {param1} {param2}", 123, "test");
-            
+
             // Should not throw exceptions
             AssertThat(true).IsTrue();
         }
@@ -127,10 +127,10 @@ namespace DMapImporter.Tests
         public void TestLoggingWithException()
         {
             AssertThat(_logger).IsNotNull();
-            
+
             var ex = new InvalidOperationException("Test exception");
             _logger!.LogError(ex, "Test error with exception");
-            
+
             // Should not throw exceptions
             AssertThat(true).IsTrue();
         }
@@ -139,7 +139,7 @@ namespace DMapImporter.Tests
         public void TestLoggingScope()
         {
             AssertThat(_logger).IsNotNull();
-            
+
             using (_logger!.BeginScope("TestScope"))
             {
                 _logger.LogInformation("Message within scope");
@@ -158,7 +158,7 @@ namespace DMapImporter.Tests
                 MaxLogFiles = 3,
                 EnableRotation = true
             };
-            
+
             AssertThat(fileOptions.LogDirectory).IsEqual("test_logs/");
             AssertThat(fileOptions.MaxFileSizeBytes).IsEqual(1024 * 1024);
             AssertThat(fileOptions.MaxLogFiles).IsEqual(3);
@@ -174,7 +174,7 @@ namespace DMapImporter.Tests
                 UseRichText = false,
                 IncludeScopes = true
             };
-            
+
             AssertThat(godotOptions.UseGodotColors).IsTrue();
             AssertThat(godotOptions.UseRichText).IsFalse();
             AssertThat(godotOptions.IncludeScopes).IsTrue();
@@ -187,7 +187,7 @@ namespace DMapImporter.Tests
             var fileProvider = new RotatingFileLoggerProvider(fileOptions);
             AssertThat(fileProvider).IsNotNull();
             fileProvider.Dispose();
-            
+
             var godotOptions = new GodotLoggingOptions();
             var godotProvider = new GodotLoggerProvider(godotOptions);
             AssertThat(godotProvider).IsNotNull();
@@ -198,10 +198,10 @@ namespace DMapImporter.Tests
         public void TestLoggerIsEnabled()
         {
             AssertThat(_logger).IsNotNull();
-            
+
             // Information should be enabled by default
             AssertThat(_logger!.IsEnabled(LogLevel.Information)).IsTrue();
-            
+
             // Trace should be disabled by default
             AssertThat(_logger.IsEnabled(LogLevel.Trace)).IsFalse();
         }
@@ -211,7 +211,7 @@ namespace DMapImporter.Tests
         {
             var instance1 = DMapLoggerFactory.Instance;
             var instance2 = DMapLoggerFactory.Instance;
-            
+
             AssertThat(instance1).IsNotNull();
             AssertThat(instance1).IsEqual(instance2); // Should be singleton
         }

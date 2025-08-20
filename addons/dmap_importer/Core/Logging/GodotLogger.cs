@@ -93,9 +93,9 @@ namespace DMapImporter.Core.Logging
             var timestamp = DateTime.Now.ToString("HH:mm:ss.fff");
             var level = GetLogLevelString(logLevel);
             var eventIdStr = eventId.Id != 0 ? $"[{eventId.Id}]" : "";
-            
+
             var formattedMessage = $"{timestamp} [{level}] {categoryName}{eventIdStr}: {message}";
-            
+
             if (exception != null)
             {
                 formattedMessage += $"\nException: {exception.Message}";
@@ -104,7 +104,7 @@ namespace DMapImporter.Core.Logging
                     formattedMessage += $"\nStack Trace:\n{exception.StackTrace}";
                 }
             }
-            
+
             return formattedMessage;
         }
 
@@ -116,7 +116,7 @@ namespace DMapImporter.Core.Logging
             var color = logLevel switch
             {
                 LogLevel.Trace => "gray",
-                LogLevel.Debug => "lightgray", 
+                LogLevel.Debug => "lightgray",
                 LogLevel.Information => "white",
                 LogLevel.Warning => "yellow",
                 LogLevel.Error => "red",
@@ -132,7 +132,7 @@ namespace DMapImporter.Core.Logging
             return logLevel switch
             {
                 LogLevel.Trace => "TRCE",
-                LogLevel.Debug => "DBUG", 
+                LogLevel.Debug => "DBUG",
                 LogLevel.Information => "INFO",
                 LogLevel.Warning => "WARN",
                 LogLevel.Error => "FAIL",

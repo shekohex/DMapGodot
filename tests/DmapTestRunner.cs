@@ -13,23 +13,23 @@ public partial class DmapTestRunner : Node
             TestDmapFileLoading();
         }
     }
-    
+
     public static void TestDmapFileLoading()
     {
         string testMapPath = "Game/5017/map/map/Gulf.DMap";
-        
+
         if (!File.Exists(testMapPath))
         {
             GD.PrintErr($"Test map file not found: {testMapPath}");
             return;
         }
-        
+
         try
         {
             GD.Print($"Testing DMAP file loading with SharpCompress: {testMapPath}");
-            
+
             var dmapFile = new DmapFile(testMapPath);
-            
+
             GD.Print($"Successfully loaded DMAP file:");
             GD.Print($"  - Map Version: {dmapFile.MapVersion}");
             GD.Print($"  - Size: {dmapFile.SizeTiles.Width}x{dmapFile.SizeTiles.Height}");
@@ -38,7 +38,7 @@ public partial class DmapTestRunner : Node
             GD.Print($"  - Covers: {dmapFile.Covers?.Count ?? 0}");
             GD.Print($"  - Terrain Scenes: {dmapFile.TerrainScenes?.Count ?? 0}");
             GD.Print($"  - Scene Layers: {dmapFile.SceneLayers?.Count ?? 0}");
-            
+
             GD.Print("DMAP SharpCompress test PASSED!");
         }
         catch (Exception ex)

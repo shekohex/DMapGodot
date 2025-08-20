@@ -66,7 +66,7 @@ namespace DMapImporter.Core.Dmap
 
         public Point World2Bg(Point posWorld)
         {
-            Point bgPos =  new Point();
+            Point bgPos = new Point();
             Point bgWorldPos = GetBackgroundWorldPos();
             bgPos.X = posWorld.X - bgWorldPos.X;
             bgPos.Y = posWorld.Y - bgWorldPos.Y;
