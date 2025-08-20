@@ -1,6 +1,7 @@
 using Godot;
 using DMapImporter.Core.Dmap;
 using DMapImporter.Core.Utility;
+using DMapImporter.Core.Performance;
 using DMapGodot.Importers;
 using System;
 using System.Drawing;
@@ -51,6 +52,12 @@ namespace DMapImporter.Nodes
         [Export] public string DMapPath { get; set; } = string.Empty;
         [Export] public Vector2I MapSize { get; set; }
         [Export] public int TileSize { get; set; } = 32;
+        [Export] public bool EnableOptimizations { get; set; } = true;
+        [Export] public bool EnableChunking { get; set; } = true;
+        [Export] public bool EnableViewportCulling { get; set; } = true;
+        [Export] public bool EnableLOD { get; set; } = true;
+        [Export] public bool EnableObjectPooling { get; set; } = true;
+        [Export] public bool ShowPerformanceStats { get; set; } = false;
 
         private DmapFile? _dmapFile;
         private TileMapLayer? _backgroundLayer;
@@ -60,6 +67,19 @@ namespace DMapImporter.Nodes
         private CordConverter? _cordConverter;
         private Dictionary<string, SceneFile> _loadedSceneFiles = new();
         private string _clientPath = string.Empty;
+        
+        // Performance optimization components
+        private ViewportCuller? _viewportCuller;
+        private ChunkManager? _chunkManager;
+        private LODSystem? _lodSystem;
+        private SpritePool? _spritePool;
+        private MarkerPool? _markerPool;
+        private TextureAtlasManager? _textureAtlasManager;
+        private PerformanceMonitor? _performanceMonitor;
+        private Camera2D? _camera;
+        private Vector2 _lastCameraPosition = Vector2.Zero;
+        private Vector2 _lastCameraZoom = Vector2.One;
+        private bool _cameraChanged = true;
 
         public override void _Ready()
         {
@@ -67,6 +87,167 @@ namespace DMapImporter.Nodes
             {
                 SetNotifyTransform(true);
             }
+            
+            InitializePerformanceComponents();
+        }
+        
+        public override void _Process(double delta)
+        {
+            if (!EnableOptimizations) return;
+            
+            _performanceMonitor?.StartFrame();
+            
+            UpdatePerformanceComponents(delta);
+            
+            _performanceMonitor?.EndFrame();
+            _performanceMonitor?.Update(delta);
+            
+            if (ShowPerformanceStats && _performanceMonitor != null)
+            {
+                // Log performance stats periodically (every 5 seconds)
+                if (Engine.GetProcessFrames() % (60 * 5) == 0)
+                {
+                    _performanceMonitor.LogPerformanceReport();
+                }
+            }
+        }
+        
+        private void InitializePerformanceComponents()
+        {
+            if (!EnableOptimizations) return;
+            
+            // Find camera (look for Camera2D in scene tree)
+            _camera = GetViewport()?.GetCamera2D();
+            if (_camera == null)
+            {
+                // Create a default camera if none exists
+                _camera = new Camera2D();
+                GetParent()?.AddChild(_camera);
+                GD.Print("Created default Camera2D for DMapRenderer optimizations");
+            }
+            
+            // Initialize performance components
+            if (EnableViewportCulling && _camera != null)
+            {
+                _viewportCuller = new ViewportCuller(_camera);
+            }
+            
+            if (EnableLOD && _camera != null)
+            {
+                _lodSystem = new LODSystem(_camera);
+            }
+            
+            if (EnableObjectPooling)
+            {
+                _spritePool = new SpritePool(this);
+                _markerPool = new MarkerPool(this);
+            }
+            
+            _textureAtlasManager = new TextureAtlasManager();
+            _performanceMonitor = new PerformanceMonitor();
+            
+            ValidateConfiguration();
+        }
+        
+        private void ValidateConfiguration()
+        {
+            if (!EnableOptimizations) return;
+            
+            if ((EnableLOD || EnableViewportCulling) && _camera == null)
+            {
+                GD.Print("Warning: LOD or Viewport Culling enabled but no camera found. Creating default camera.");
+            }
+            
+            if (EnableChunking && MapSize.X * MapSize.Y < 65536) // 256x256
+            {
+                GD.Print("Warning: Chunking enabled for small map. Consider disabling for better performance.");
+            }
+            
+            if (EnableObjectPooling && !EnableChunking && !EnableViewportCulling)
+            {
+                GD.Print("Warning: Object pooling most effective when combined with culling systems.");
+            }
+            
+            if (ShowPerformanceStats && !EnableOptimizations)
+            {
+                GD.Print("Warning: Performance stats enabled but optimizations disabled.");
+            }
+        }
+        
+        private void UpdatePerformanceComponents(double delta)
+        {
+            // Check if camera has moved to avoid unnecessary updates
+            bool cameraChanged = CheckCameraChanged();
+            
+            if (_viewportCuller != null && (cameraChanged || _cameraChanged))
+            {
+                _viewportCuller.UpdateCullingBounds();
+            }
+            
+            if (_chunkManager != null && _viewportCuller != null && (cameraChanged || _cameraChanged))
+            {
+                _chunkManager.UpdateVisibleChunks(_viewportCuller, new Vector2I(64, 32));
+                _cameraChanged = false; // Reset flag after update
+            }
+            
+            if (_lodSystem != null)
+            {
+                _lodSystem.Update(delta);
+            }
+            
+            if (_performanceMonitor != null)
+            {
+                _performanceMonitor.SetReferences(_chunkManager, _lodSystem, _spritePool, _markerPool);
+                
+                // Update visible counts
+                int visibleTiles = CountVisibleTiles();
+                int visibleObjects = CountVisibleObjects();
+                _performanceMonitor.SetVisibleCounts(visibleTiles, visibleObjects);
+            }
+        }
+        
+        private int CountVisibleTiles()
+        {
+            if (_terrainLayer == null) return 0;
+            
+            int count = 0;
+            var usedCells = _terrainLayer.GetUsedCells();
+            foreach (var cell in usedCells)
+            {
+                if (_terrainLayer.GetCellSourceId(cell) >= 0) count++;
+            }
+            return count;
+        }
+        
+        private int CountVisibleObjects()
+        {
+            if (_objectLayer == null) return 0;
+            
+            int count = 0;
+            foreach (Node child in _objectLayer.GetChildren())
+            {
+                if (child is CanvasItem canvasItem && canvasItem.Visible) count++;
+            }
+            return count;
+        }
+        
+        private bool CheckCameraChanged()
+        {
+            if (_camera == null) return false;
+            
+            var currentPosition = _camera.GlobalPosition;
+            var currentZoom = _camera.Zoom;
+            
+            bool changed = !currentPosition.IsEqualApprox(_lastCameraPosition) || 
+                          !currentZoom.IsEqualApprox(_lastCameraZoom);
+                          
+            if (changed)
+            {
+                _lastCameraPosition = currentPosition;
+                _lastCameraZoom = currentZoom;
+            }
+            
+            return changed;
         }
 
         public void LoadFromDMap(DmapFile dmap)
@@ -99,6 +280,13 @@ namespace DMapImporter.Nodes
             CreateLayers();
             CreateSceneLayerManagement();
             CreateSelectionLayer();
+            
+            // Initialize chunk manager if enabled
+            if (EnableChunking && EnableOptimizations)
+            {
+                _chunkManager = new ChunkManager(dmap, _objectLayer!);
+            }
+            
             PopulateFromDMap();
         }
 
@@ -108,6 +296,15 @@ namespace DMapImporter.Nodes
             {
                 child.QueueFree();
             }
+        }
+        
+        public override void _ExitTree()
+        {
+            // Cleanup performance components
+            _performanceMonitor?.Dispose();
+            _lodSystem?.ClearObjects();
+            
+            base._ExitTree();
         }
 
         private void CreateLayers()
@@ -200,23 +397,51 @@ namespace DMapImporter.Nodes
         {
             if (_dmapFile == null || _terrainLayer == null) return;
 
-            for (int x = 0; x < _dmapFile.SizeTiles.Width; x++)
+            // If viewport culling is enabled, only render visible tiles
+            if (EnableViewportCulling && _viewportCuller != null)
             {
-                for (int y = 0; y < _dmapFile.SizeTiles.Height; y++)
+                _viewportCuller.UpdateCullingBounds();
+                var visibleRange = _viewportCuller.GetVisibleTileRange(new Vector2I(64, 32), MapSize);
+                
+                for (int x = visibleRange.Position.X; x < visibleRange.Position.X + visibleRange.Size.X; x++)
                 {
-                    var tile = _dmapFile.TileSet[x, y];
-
-                    // Only place if accessible
-                    if (tile.Access > 0)
+                    for (int y = visibleRange.Position.Y; y < visibleRange.Position.Y + visibleRange.Size.Y; y++)
                     {
-                        var coords = new Vector2I(x, y);
-
-                        // Place empty tile (source_id 0 will be added in Task 6)
-                        _terrainLayer.SetCell(coords, -1, Vector2I.Zero, 0);
-
-                        // Note: Custom data will be set when we have actual tiles
+                        if (x >= 0 && x < _dmapFile.SizeTiles.Width && y >= 0 && y < _dmapFile.SizeTiles.Height)
+                        {
+                            PlaceTerrainTile(x, y);
+                        }
                     }
                 }
+            }
+            else
+            {
+                // Render all tiles (original behavior)
+                for (int x = 0; x < _dmapFile.SizeTiles.Width; x++)
+                {
+                    for (int y = 0; y < _dmapFile.SizeTiles.Height; y++)
+                    {
+                        PlaceTerrainTile(x, y);
+                    }
+                }
+            }
+        }
+        
+        private void PlaceTerrainTile(int x, int y)
+        {
+            if (_dmapFile == null || _terrainLayer == null) return;
+            
+            var tile = _dmapFile.TileSet[x, y];
+
+            // Only place if accessible
+            if (tile.Access > 0)
+            {
+                var coords = new Vector2I(x, y);
+
+                // Place empty tile (source_id 0 will be added in Task 6)
+                _terrainLayer.SetCell(coords, -1, Vector2I.Zero, 0);
+
+                // Note: Custom data will be set when we have actual tiles
             }
         }
 
@@ -339,18 +564,47 @@ namespace DMapImporter.Nodes
             var texture = LoadSceneTexture(scenePart.AniPath, scenePart.AniName);
             if (texture == null) return;
 
-            // Create sprite node for the scene part
-            var sprite = new Sprite2D();
-            sprite.Name = $"Scene_{scenePart.AniName}";
+            // Create sprite node for the scene part - use pooling if enabled
+            Sprite2D sprite;
+            if (EnableObjectPooling && _spritePool != null)
+            {
+                sprite = _spritePool.Get();
+                sprite.Name = $"Scene_{scenePart.AniName}";
+            }
+            else
+            {
+                sprite = new Sprite2D();
+                sprite.Name = $"Scene_{scenePart.AniName}";
+            }
+            
             sprite.Texture = texture;
 
             // Calculate final position with Y-sorting consideration
             var finalPosition = CalculateYSortedPosition(worldPos, scenePart.OffsetElevation);
             sprite.Position = finalPosition;
+            
+            // Enable LOD if system is available
+            if (EnableLOD && _lodSystem != null)
+            {
+                var lodSprite = new LODSprite();
+                lodSprite.Texture = texture;
+                lodSprite.Position = finalPosition;
+                lodSprite.Name = sprite.Name;
+                
+                _lodSystem.RegisterLODObject(lodSprite);
+                sprite = lodSprite;
+            }
 
             // Add to appropriate layer
             var sceneLayer = GetSceneObjectsLayer() ?? _objectLayer;
             sceneLayer?.AddChild(sprite);
+            
+            // Add to chunk management if enabled
+            if (EnableChunking && _chunkManager != null)
+            {
+                var tileCoord = new Vector2I((int)(basePosition.X), (int)(basePosition.Y));
+                _chunkManager.AddObjectToChunk(tileCoord, sprite);
+            }
 
             if (Engine.IsEditorHint())
             {
@@ -386,9 +640,19 @@ namespace DMapImporter.Nodes
                 return;
             }
 
-            // Create sprite node for the cover
-            var sprite = new Sprite2D();
-            sprite.Name = $"Cover_{cover.AniName}";
+            // Create sprite node for the cover - use pooling if enabled
+            Sprite2D sprite;
+            if (EnableObjectPooling && _spritePool != null)
+            {
+                sprite = _spritePool.Get();
+                sprite.Name = $"Cover_{cover.AniName}";
+            }
+            else
+            {
+                sprite = new Sprite2D();
+                sprite.Name = $"Cover_{cover.AniName}";
+            }
+            
             sprite.Texture = texture;
 
             // Apply pixel offset if specified
@@ -410,6 +674,30 @@ namespace DMapImporter.Nodes
             // Add to appropriate layer
             var coverLayer = GetCoverObjectsLayer() ?? _objectLayer;
             coverLayer?.AddChild(sprite);
+            
+            // Add to chunk management if enabled
+            if (EnableChunking && _chunkManager != null)
+            {
+                var tileCoord = new Vector2I((int)cover.Position.X, (int)cover.Position.Y);
+                _chunkManager.AddObjectToChunk(tileCoord, sprite);
+            }
+            
+            // Enable LOD if system is available
+            if (EnableLOD && _lodSystem != null && sprite is Sprite2D regularSprite)
+            {
+                var lodSprite = new LODSprite();
+                lodSprite.Texture = regularSprite.Texture;
+                lodSprite.Position = regularSprite.Position;
+                lodSprite.Modulate = regularSprite.Modulate;
+                lodSprite.Name = regularSprite.Name;
+                
+                // Replace the regular sprite with LOD sprite
+                coverLayer?.RemoveChild(regularSprite);
+                coverLayer?.AddChild(lodSprite);
+                
+                _lodSystem.RegisterLODObject(lodSprite);
+                sprite = lodSprite;
+            }
 
             if (Engine.IsEditorHint())
             {
