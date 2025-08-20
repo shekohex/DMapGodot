@@ -72,7 +72,7 @@ namespace DMapImporter.Tests
 
             // Verify custom data layers exist
             AssertThat(tileSet.GetCustomDataLayersCount()).IsEqual(3);
-            AssertThat(tileSet.GetCustomDataLayerName(0)).IsEqual("walkable");
+            AssertThat(tileSet.GetCustomDataLayerName(0)).IsEqual("no_access");
             AssertThat(tileSet.GetCustomDataLayerName(1)).IsEqual("surface");
             AssertThat(tileSet.GetCustomDataLayerName(2)).IsEqual("height");
         }

@@ -99,23 +99,23 @@ This project uses Task Master for development workflow. See the task dashboard b
 
 
 <!-- TASKMASTER_EXPORT_START -->
-> 🎯 **Taskmaster Export** - 2025-08-20 11:50:27 UTC
+> 🎯 **Taskmaster Export** - 2025-08-20 12:33:45 UTC
 > 📋 Export: with subtasks • Status filter: none
 > 🔗 Powered by [Task Master](https://task-master.dev?utm_source=github-readme&utm_medium=readme-export&utm_campaign=dmapgodot&utm_content=task-export-link)
 
 | Project Dashboard |  |
 | :-                |:-|
-| Task Progress     | ███████░░░░░░░░░░░░░ 33% |
-| Done | 5 |
+| Task Progress     | ████████░░░░░░░░░░░░ 40% |
+| Done | 6 |
 | In Progress | 0 |
-| Pending | 10 |
+| Pending | 9 |
 | Deferred | 0 |
 | Cancelled | 0 |
 |-|-|
-| Subtask Progress | ████████░░░░░░░░░░░░ 42% |
-| Completed | 36 |
+| Subtask Progress | ██████████░░░░░░░░░░ 48% |
+| Completed | 41 |
 | In Progress | 0 |
-| Pending | 49 |
+| Pending | 44 |
 
 
 | ID | Title | Status | Priority | Dependencies | Complexity |
@@ -161,12 +161,12 @@ This project uses Task Master for development workflow. See the task dashboard b
 | 5.5 | Add custom data layers for tile properties | ✓&nbsp;done | -            | None | N/A |
 | 5.6 | Implement LoadFromDMap method | ✓&nbsp;done | -            | None | N/A |
 | 5.7 | Test with Game/5017/map/ data | ✓&nbsp;done | -            | None | N/A |
-| 6 | Implement Isometric TileSet Creation | ○&nbsp;pending | medium | 5 | N/A |
-| 6.1 | Create DMapRenderer Node Class Structure | ○&nbsp;pending | -            | None | N/A |
-| 6.2 | Implement CreateTerrainTileSet Method with Isometric Configuration | ○&nbsp;pending | -            | 1 | N/A |
-| 6.3 | Add Custom Data Layers for Tile Properties | ○&nbsp;pending | -            | 2 | N/A |
-| 6.4 | Implement CreatePuzzleTileSet Method for Background Layer | ○&nbsp;pending | -            | 2 | N/A |
-| 6.5 | Integrate TileSet Creation with Layer System and Texture Sources | ○&nbsp;pending | -            | 3, 4 | N/A |
+| 6 | Implement Isometric TileSet Creation | ✓&nbsp;done | medium | 5 | N/A |
+| 6.1 | Create DMapRenderer Node Class Structure | ✓&nbsp;done | -            | None | N/A |
+| 6.2 | Implement CreateTerrainTileSet Method with Isometric Configuration | ✓&nbsp;done | -            | 1 | N/A |
+| 6.3 | Add Custom Data Layers for Tile Properties | ✓&nbsp;done | -            | 2 | N/A |
+| 6.4 | Implement CreatePuzzleTileSet Method for Background Layer | ✓&nbsp;done | -            | 2 | N/A |
+| 6.5 | Integrate TileSet Creation with Layer System and Texture Sources | ✓&nbsp;done | -            | 3, 4 | N/A |
 | 7 | Implement DDS Texture Conversion | ○&nbsp;pending | medium | 6 | N/A |
 | 8 | Update Plugin Entry Point | ○&nbsp;pending | medium | 4, 5 | N/A |
 | 8.1 | Create plugin.cfg configuration file | ○&nbsp;pending | -            | None | N/A |
@@ -223,6 +223,7 @@ This project uses Task Master for development workflow. See the task dashboard b
 
 > 📋 **End of Taskmaster Export** - Tasks are synced from your project using the `sync-readme` command.
 <!-- TASKMASTER_EXPORT_END -->
+
 
 
 

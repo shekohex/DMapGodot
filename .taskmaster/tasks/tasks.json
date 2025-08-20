@@ -397,7 +397,7 @@
         "id": 6,
         "title": "Implement Isometric TileSet Creation",
         "description": "Create TileSet resources with proper isometric configuration and custom data layers for terrain properties based on PRD Phase 4 Rendering System specifications (lines 322-343)",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           5
         ],
@@ -409,7 +409,7 @@
             "id": 1,
             "title": "Create DMapRenderer Node Class Structure",
             "description": "Create the main DMapRenderer.cs class extending Node2D in addons/dmap_importer/Nodes/ directory with proper Godot attributes and basic structure for isometric rendering",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "details": "Create DMapRenderer.cs in addons/dmap_importer/Nodes/ following PRD lines 284-321. Implement as [Tool] public partial class DMapRenderer : Node2D with private fields for TileMap layers (backgroundLayer, terrainLayer) and Node2D objectLayer. Include LoadFromDMap(DmapFile dmap) method signature and CreateLayers() method structure. Reference PRD directory structure (lines 88-90) and component mapping (lines 104-105).",
             "testStrategy": "Verify class compiles without errors, confirm [Tool] attribute enables editor functionality, test Node2D inheritance provides proper transform capabilities"
@@ -418,7 +418,7 @@
             "id": 2,
             "title": "Implement CreateTerrainTileSet Method with Isometric Configuration",
             "description": "Implement CreateTerrainTileSet() method to create TileSet resource with isometric shape configuration and 64x32 pixel tile size as specified in PRD lines 323-343",
-            "status": "pending",
+            "status": "done",
             "dependencies": [
               1
             ],
@@ -429,7 +429,7 @@
             "id": 3,
             "title": "Add Custom Data Layers for Tile Properties",
             "description": "Add custom data layers to TileSet for 'no_access' (bool), 'surface' (int), and 'height' (int) properties matching Tile.cs structure from Tiled2Dmap",
-            "status": "pending",
+            "status": "done",
             "dependencies": [
               2
             ],
@@ -440,7 +440,7 @@
             "id": 4,
             "title": "Implement CreatePuzzleTileSet Method for Background Layer",
             "description": "Create CreatePuzzleTileSet() method for background puzzle layer with appropriate configuration for non-interactive background tiles",
-            "status": "pending",
+            "status": "done",
             "dependencies": [
               2
             ],
@@ -451,7 +451,7 @@
             "id": 5,
             "title": "Integrate TileSet Creation with Layer System and Texture Sources",
             "description": "Connect TileSet creation methods with CreateLayers() method and integrate texture source management for DDS conversion and collision shape configuration",
-            "status": "pending",
+            "status": "done",
             "dependencies": [
               3,
               4
@@ -987,7 +987,7 @@
     ],
     "metadata": {
       "created": "2025-08-19T22:29:59.765Z",
-      "updated": "2025-08-20T10:38:07.202Z",
+      "updated": "2025-08-20T12:29:13.102Z",
       "description": "Tasks for master context"
     }
   }

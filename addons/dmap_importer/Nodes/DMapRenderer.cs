@@ -126,45 +126,47 @@ namespace DMapImporter.Nodes
                 }
             }
 
-            // Create and assign TileSets
-            var tileSet = CreateBasicIsometricTileSet();
-            AddCustomDataLayers(tileSet);
+            // Create and assign separate TileSets
+            var puzzleTileSet = CreatePuzzleTileSet();
+            var terrainTileSet = CreateTerrainTileSet();
 
-            _backgroundLayer.TileSet = tileSet;
-            _terrainLayer.TileSet = tileSet;
+            _backgroundLayer.TileSet = puzzleTileSet;
+            _terrainLayer.TileSet = terrainTileSet;
         }
 
-        private TileSet CreateBasicIsometricTileSet()
+        private TileSet CreateTerrainTileSet()
         {
             var tileSet = new TileSet();
-
-            // Isometric configuration per PRD
             tileSet.TileShape = TileSet.TileShapeEnum.Isometric;
             tileSet.TileSize = new Vector2I(64, 32);
             tileSet.TileLayout = TileSet.TileLayoutEnum.Stacked;
 
-            // Note: Atlas source will be added in Task 6
-            // For now, just create empty tileset structure
-
-            return tileSet;
-        }
-
-        private void AddCustomDataLayers(TileSet tileSet)
-        {
-            // Layer 0: Walkability (inverse of NoAccess)
+            // Add custom data layers (from Tile.cs structure)
             tileSet.AddCustomDataLayer();
-            tileSet.SetCustomDataLayerName(0, "walkable");
+            tileSet.SetCustomDataLayerName(0, "no_access");
             tileSet.SetCustomDataLayerType(0, Variant.Type.Bool);
 
-            // Layer 1: Surface type
             tileSet.AddCustomDataLayer();
             tileSet.SetCustomDataLayerName(1, "surface");
             tileSet.SetCustomDataLayerType(1, Variant.Type.Int);
 
-            // Layer 2: Height value
             tileSet.AddCustomDataLayer();
             tileSet.SetCustomDataLayerName(2, "height");
             tileSet.SetCustomDataLayerType(2, Variant.Type.Int);
+
+            return tileSet;
+        }
+
+        private TileSet CreatePuzzleTileSet()
+        {
+            var tileSet = new TileSet();
+            tileSet.TileShape = TileSet.TileShapeEnum.Isometric;
+            tileSet.TileSize = new Vector2I(64, 32);
+            tileSet.TileLayout = TileSet.TileLayoutEnum.Stacked;
+
+            // No custom data layers for background/puzzle layer
+
+            return tileSet;
         }
 
         private void PopulateFromDMap()
