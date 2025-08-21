@@ -22,7 +22,7 @@ public partial class DMapImporterPlugin : EditorPlugin
             MinimumLevel = LogLevel.Information,
             EnableGodotLogging = true,
             EnableFileLogging = true,
-            EnableConsoleLogging = false // Disable console in Godot
+            EnableConsoleLogging = true // Disable console in Godot
         };
 
         var loggerFactory = DMapLoggerFactory.Create(options);

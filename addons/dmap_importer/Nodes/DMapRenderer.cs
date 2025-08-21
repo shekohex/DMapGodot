@@ -92,6 +92,13 @@ namespace DMapImporter.Nodes
             }
             
             InitializePerformanceComponents();
+            
+            // Auto-load DMAP if DMapPath is set and no data is loaded
+            if (!string.IsNullOrEmpty(DMapPath) && _dmapFile == null)
+            {
+                GD.Print($"[DMapRenderer] Auto-loading DMAP from: {DMapPath}");
+                CallDeferred(nameof(LoadDMapFromPath), DMapPath);
+            }
         }
         
         public override void _Process(double delta)
@@ -257,13 +264,18 @@ namespace DMapImporter.Nodes
         {
             if (dmap == null)
             {
-                _logger.LogError("Cannot load null DmapFile");
+                var error = "Cannot load null DmapFile";
+                _logger.LogError(error);
+                GD.PrintErr($"[DMapRenderer ERROR] {error}");
                 return;
             }
 
+            GD.Print("[DMapRenderer] Starting LoadFromDMap...");
             _dmapFile = dmap;
             DMapPath = dmap.DmapPath;
             MapSize = new Vector2I((int)dmap.SizeTiles.Width, (int)dmap.SizeTiles.Height);
+            
+            GD.Print($"[DMapRenderer] DMAP loaded: {DMapPath}, Size: {MapSize}");
 
             // Extract client path from DMapPath
             _clientPath = ExtractClientPath(dmap.DmapPath);
@@ -279,18 +291,81 @@ namespace DMapImporter.Nodes
             var bgSize = new System.Drawing.Size(256, 256);
             _cordConverter = new CordConverter(dmapSize, bgSize);
 
-            ClearChildren();
-            CreateLayers();
-            CreateSceneLayerManagement();
-            CreateSelectionLayer();
-            
-            // Initialize chunk manager if enabled
-            if (EnableChunking && EnableOptimizations)
+            try
             {
-                _chunkManager = new ChunkManager(dmap, _objectLayer!);
+                GD.Print("[DMapRenderer] Clearing existing children...");
+                ClearChildren();
+                
+                GD.Print("[DMapRenderer] Creating layers...");
+                CreateLayers();
+                GD.Print("[DMapRenderer] Layers created successfully");
+                
+                GD.Print("[DMapRenderer] Creating scene layer management...");
+                CreateSceneLayerManagement();
+                GD.Print("[DMapRenderer] Scene layer management created successfully");
+                
+                GD.Print("[DMapRenderer] Creating selection layer...");
+                CreateSelectionLayer();
+                GD.Print("[DMapRenderer] Selection layer created successfully");
+
+                // Initialize chunk manager if enabled
+                if (EnableChunking && EnableOptimizations)
+                {
+                    GD.Print("[DMapRenderer] Initializing chunk manager...");
+                    _chunkManager = new ChunkManager(dmap, _objectLayer!);
+                }
+
+                GD.Print("[DMapRenderer] Populating from DMAP...");
+                PopulateFromDMap();
+                
+                GD.Print("[DMapRenderer] LoadFromDMap completed successfully");
             }
-            
-            PopulateFromDMap();
+            catch (Exception ex)
+            {
+                var error = $"Error in LoadFromDMap: {ex.Message}";
+                _logger.LogError(ex, error);
+                GD.PrintErr($"[DMapRenderer ERROR] {error}");
+                GD.PrintErr($"[DMapRenderer ERROR] Exception type: {ex.GetType().Name}");
+                GD.PrintErr($"[DMapRenderer ERROR] Stack trace: {ex.StackTrace}");
+                throw; // Re-throw to let the importer handle it
+            }
+        }
+
+        public void LoadDMapFromPath(string dmapPath)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(dmapPath))
+                {
+                    GD.PrintErr("[DMapRenderer] Cannot load DMAP - path is null or empty");
+                    return;
+                }
+
+                GD.Print($"[DMapRenderer] LoadDMapFromPath called with: {dmapPath}");
+                
+                // Convert Godot resource path to filesystem path
+                string absolutePath = ProjectSettings.GlobalizePath(dmapPath);
+                GD.Print($"[DMapRenderer] Converted to absolute path: {absolutePath}");
+
+                if (!System.IO.File.Exists(absolutePath))
+                {
+                    GD.PrintErr($"[DMapRenderer] DMAP file not found: {absolutePath}");
+                    return;
+                }
+
+                // Load the DMAP file
+                var dmapFile = new DmapFile(absolutePath);
+                GD.Print($"[DMapRenderer] Successfully loaded DMAP file: {dmapFile.DmapName}");
+
+                // Load it into the renderer
+                LoadFromDMap(dmapFile);
+                GD.Print("[DMapRenderer] Auto-load completed successfully");
+            }
+            catch (Exception ex)
+            {
+                GD.PrintErr($"[DMapRenderer] Error in LoadDMapFromPath: {ex.Message}");
+                GD.PrintErr($"[DMapRenderer] Stack trace: {ex.StackTrace}");
+            }
         }
 
         private void ClearChildren()
@@ -312,37 +387,73 @@ namespace DMapImporter.Nodes
 
         private void CreateLayers()
         {
-            // Background Layer (Puzzle pieces)
-            _backgroundLayer = new TileMapLayer();
-            _backgroundLayer.Name = "BackgroundLayer";
-            _backgroundLayer.ZIndex = 0;
-            _backgroundLayer.Enabled = true;
-            AddChild(_backgroundLayer);
-
-            // Terrain Layer (Walkable/Surface data)
-            _terrainLayer = new TileMapLayer();
-            _terrainLayer.Name = "TerrainLayer";
-            _terrainLayer.ZIndex = 1;
-            _terrainLayer.Enabled = true;
-            AddChild(_terrainLayer);
-
-            // Object Layer (3D objects with Y-sorting)
-            _objectLayer = new Node2D();
-            _objectLayer.Name = "ObjectLayer";
-            _objectLayer.ZIndex = 2;
-            _objectLayer.YSortEnabled = true;
-            AddChild(_objectLayer);
-
-            // Set owner for editor visibility
-            if (Engine.IsEditorHint())
+            try
             {
-                var root = GetTree()?.EditedSceneRoot;
-                if (root != null)
+                GD.Print("[DMapRenderer] Creating background layer...");
+                _backgroundLayer = new TileMapLayer();
+                _backgroundLayer.Name = "BackgroundLayer";
+                _backgroundLayer.ZIndex = 0;
+                _backgroundLayer.Enabled = true;
+                
+                GD.Print("[DMapRenderer] Adding background layer to scene...");
+                AddChild(_backgroundLayer);
+                GD.Print("[DMapRenderer] Background layer added successfully");
+
+                GD.Print("[DMapRenderer] Creating terrain layer...");
+                _terrainLayer = new TileMapLayer();
+                _terrainLayer.Name = "TerrainLayer";
+                _terrainLayer.ZIndex = 1;
+                _terrainLayer.Enabled = true;
+                
+                GD.Print("[DMapRenderer] Adding terrain layer to scene...");
+                AddChild(_terrainLayer);
+                GD.Print("[DMapRenderer] Terrain layer added successfully");
+
+                GD.Print("[DMapRenderer] Creating object layer...");
+                _objectLayer = new Node2D();
+                _objectLayer.Name = "ObjectLayer";
+                _objectLayer.ZIndex = 2;
+                _objectLayer.YSortEnabled = true;
+                GD.Print("[DMapRenderer] Adding object layer to scene...");
+                AddChild(_objectLayer);
+                GD.Print("[DMapRenderer] Object layer added successfully");
+                GD.Print("[DMapRenderer] Object layer created and added");
+            }
+            catch (Exception ex)
+            {
+                GD.PrintErr($"[DMapRenderer ERROR] Exception in CreateLayers: {ex.Message}");
+                GD.PrintErr($"[DMapRenderer ERROR] Stack trace: {ex.StackTrace}");
+                throw;
+            }
+
+            // Set owner for editor visibility - only if we're in a proper scene tree
+            // Skip owner assignment during import as GetTree() may be null
+            if (Engine.IsEditorHint() && GetTree() != null)
+            {
+                try 
                 {
-                    _backgroundLayer.Owner = root;
-                    _terrainLayer.Owner = root;
-                    _objectLayer.Owner = root;
+                    var root = GetTree()?.EditedSceneRoot;
+                    if (root != null)
+                    {
+                        GD.Print("[DMapRenderer] Setting owners for editor visibility");
+                        if (_backgroundLayer != null) _backgroundLayer.Owner = root;
+                        if (_terrainLayer != null) _terrainLayer.Owner = root;
+                        if (_objectLayer != null) _objectLayer.Owner = root;
+                        GD.Print("[DMapRenderer] Owner assignment completed");
+                    }
+                    else
+                    {
+                        GD.Print("[DMapRenderer] No EditedSceneRoot found - skipping owner assignment");
+                    }
                 }
+                catch (Exception ex)
+                {
+                    GD.Print($"[DMapRenderer] Owner assignment failed: {ex.Message} - continuing without owners");
+                }
+            }
+            else
+            {
+                GD.Print("[DMapRenderer] Not in editor or no scene tree - skipping owner assignment");
             }
 
             // Create and assign separate TileSets
@@ -373,6 +484,25 @@ namespace DMapImporter.Nodes
             tileSet.SetCustomDataLayerName(2, "height");
             tileSet.SetCustomDataLayerType(2, Variant.Type.Int);
 
+            // Create a basic tile source for testing
+            var source = new TileSetAtlasSource();
+            
+            // Create a simple colored texture for visibility
+            var image = Image.CreateEmpty(64, 32, false, Image.Format.Rgba8);
+            image.Fill(new Godot.Color(0.3f, 0.7f, 0.3f, 1.0f)); // Green color for terrain
+            var texture = ImageTexture.CreateFromImage(image);
+            
+            source.Texture = texture;
+            source.TextureRegionSize = new Vector2I(64, 32);
+            
+            // Create a single tile at position (0,0)
+            source.CreateTile(Vector2I.Zero, new Vector2I(1, 1));
+            
+            // Add the source to the tileset
+            tileSet.AddSource(source, 0);
+            
+            GD.Print("[DMapRenderer] Created terrain tileset with basic green tile source");
+
             return tileSet;
         }
 
@@ -390,15 +520,53 @@ namespace DMapImporter.Nodes
 
         private void PopulateFromDMap()
         {
-            if (_dmapFile == null) return;
+            if (_dmapFile == null) 
+            {
+                GD.PrintErr("[DMapRenderer ERROR] _dmapFile is null in PopulateFromDMap");
+                return;
+            }
 
-            PlaceTerrainTiles();
-            PlaceObjectMarkers();
+            try
+            {
+                GD.Print("[DMapRenderer] Starting PopulateFromDMap...");
+                GD.Print("[DMapRenderer] Placing terrain tiles...");
+                PlaceTerrainTiles();
+                
+                GD.Print("[DMapRenderer] Placing object markers...");
+                PlaceObjectMarkers();
+                
+                GD.Print("[DMapRenderer] PopulateFromDMap completed successfully");
+            }
+            catch (Exception ex)
+            {
+                GD.PrintErr($"[DMapRenderer ERROR] Exception in PopulateFromDMap: {ex.Message}");
+                GD.PrintErr($"[DMapRenderer ERROR] Stack trace: {ex.StackTrace}");
+                throw;
+            }
         }
 
         private void PlaceTerrainTiles()
         {
-            if (_dmapFile == null || _terrainLayer == null) return;
+            if (_dmapFile == null || _terrainLayer == null) 
+            {
+                GD.PrintErr("[DMapRenderer ERROR] Cannot place terrain tiles - dmapFile or terrainLayer is null");
+                return;
+            }
+
+            GD.Print($"[DMapRenderer] PlaceTerrainTiles starting - Map size: {MapSize}, Tiles: {_dmapFile.SizeTiles.Width}x{_dmapFile.SizeTiles.Height}");
+
+            int tilesPlaced = 0;
+            int totalTiles = (int)(_dmapFile.SizeTiles.Width * _dmapFile.SizeTiles.Height);
+            
+            // Debug: Check a few random tiles to understand the data structure
+            GD.Print($"[DMapRenderer] Analyzing sample tiles...");
+            for (int i = 0; i < Math.Min(10, totalTiles); i++)
+            {
+                int x = i % (int)_dmapFile.SizeTiles.Width;
+                int y = i / (int)_dmapFile.SizeTiles.Width;
+                var sampleTile = _dmapFile.TileSet[x, y];
+                GD.Print($"[DMapRenderer] Sample tile ({x}, {y}): Access={sampleTile.Access}, NoAccess={sampleTile.NoAccess}, Surface={sampleTile.Surface}, Height={sampleTile.Height}");
+            }
 
             // If viewport culling is enabled, only render visible tiles
             if (EnableViewportCulling && _viewportCuller != null)
@@ -412,7 +580,8 @@ namespace DMapImporter.Nodes
                     {
                         if (x >= 0 && x < _dmapFile.SizeTiles.Width && y >= 0 && y < _dmapFile.SizeTiles.Height)
                         {
-                            PlaceTerrainTile(x, y);
+                            if (PlaceTerrainTile(x, y))
+                                tilesPlaced++;
                         }
                     }
                 }
@@ -424,28 +593,39 @@ namespace DMapImporter.Nodes
                 {
                     for (int y = 0; y < _dmapFile.SizeTiles.Height; y++)
                     {
-                        PlaceTerrainTile(x, y);
+                        if (PlaceTerrainTile(x, y))
+                            tilesPlaced++;
                     }
                 }
             }
+
+            GD.Print($"[DMapRenderer] PlaceTerrainTiles completed - Placed {tilesPlaced} of {totalTiles} tiles ({(float)tilesPlaced/totalTiles*100:F1}%)");
         }
         
-        private void PlaceTerrainTile(int x, int y)
+        private bool PlaceTerrainTile(int x, int y)
         {
-            if (_dmapFile == null || _terrainLayer == null) return;
+            if (_dmapFile == null || _terrainLayer == null) return false;
             
             var tile = _dmapFile.TileSet[x, y];
 
-            // Only place if accessible
-            if (tile.Access > 0)
+            var coords = new Vector2I(x, y);
+
+            // Place ALL tiles for rendering - Access is for gameplay, not rendering
+            _terrainLayer.SetCell(coords, 0, Vector2I.Zero, 0);
+
+            // Set custom data for gameplay logic
+            var customData = new Godot.Collections.Dictionary();
+            customData["no_access"] = tile.NoAccess > 0;
+            customData["surface"] = (int)tile.Surface;
+            customData["height"] = (int)tile.Height;
+            
+            // Log first few tiles for debugging
+            if (x < 3 && y < 3)
             {
-                var coords = new Vector2I(x, y);
-
-                // Place empty tile (source_id 0 will be added in Task 6)
-                _terrainLayer.SetCell(coords, -1, Vector2I.Zero, 0);
-
-                // Note: Custom data will be set when we have actual tiles
+                GD.Print($"[DMapRenderer] Placed tile at ({x}, {y}) - Access: {tile.Access}, Surface: {tile.Surface}, Height: {tile.Height}, NoAccess: {tile.NoAccess}");
             }
+            
+            return true;
         }
 
         private string ExtractClientPath(string dmapPath)
@@ -800,39 +980,64 @@ namespace DMapImporter.Nodes
 
         private void CreateSceneLayerManagement()
         {
-            // The objectLayer already exists with Y-sorting enabled
-            // We can create sub-layers if needed for better organization
-            if (_objectLayer == null) return;
-
-            // Create sublayers for different object types
-            var terrainObjectsLayer = new Node2D();
-            terrainObjectsLayer.Name = "TerrainObjects";
-            terrainObjectsLayer.YSortEnabled = true;
-            terrainObjectsLayer.ZIndex = 0;
-
-            var coverObjectsLayer = new Node2D();
-            coverObjectsLayer.Name = "CoverObjects";
-            coverObjectsLayer.YSortEnabled = true;
-            coverObjectsLayer.ZIndex = 1; // Covers render above terrain objects
-
-            var portalLayer = new Node2D();
-            portalLayer.Name = "Portals";
-            portalLayer.YSortEnabled = true;
-            portalLayer.ZIndex = 2; // Portals on top
-
-            _objectLayer.AddChild(terrainObjectsLayer);
-            _objectLayer.AddChild(coverObjectsLayer);
-            _objectLayer.AddChild(portalLayer);
-
-            if (Engine.IsEditorHint())
+            try
             {
-                var root = GetTree()?.EditedSceneRoot;
-                if (root != null)
+                GD.Print("[DMapRenderer] Creating scene layer management...");
+                // The objectLayer already exists with Y-sorting enabled
+                // We can create sub-layers if needed for better organization
+                if (_objectLayer == null) 
                 {
-                    terrainObjectsLayer.Owner = root;
-                    coverObjectsLayer.Owner = root;
-                    portalLayer.Owner = root;
+                    GD.PrintErr("[DMapRenderer ERROR] _objectLayer is null in CreateSceneLayerManagement");
+                    return;
                 }
+
+                GD.Print("[DMapRenderer] Creating terrain objects layer...");
+                // Create sublayers for different object types
+                var terrainObjectsLayer = new Node2D();
+                terrainObjectsLayer.Name = "TerrainObjects";
+                terrainObjectsLayer.YSortEnabled = true;
+                terrainObjectsLayer.ZIndex = 0;
+
+                GD.Print("[DMapRenderer] Creating cover objects layer...");
+                var coverObjectsLayer = new Node2D();
+                coverObjectsLayer.Name = "CoverObjects";
+                coverObjectsLayer.YSortEnabled = true;
+                coverObjectsLayer.ZIndex = 1; // Covers render above terrain objects
+
+                GD.Print("[DMapRenderer] Creating portal layer...");
+                var portalLayer = new Node2D();
+                portalLayer.Name = "Portals";
+                portalLayer.YSortEnabled = true;
+                portalLayer.ZIndex = 2; // Portals on top
+
+                GD.Print("[DMapRenderer] Adding sublayers to object layer...");
+                _objectLayer.AddChild(terrainObjectsLayer);
+                _objectLayer.AddChild(coverObjectsLayer);
+                _objectLayer.AddChild(portalLayer);
+                GD.Print("[DMapRenderer] Scene layer management completed");
+
+                // Set owner for editor visibility - inside try block to access variables
+                if (Engine.IsEditorHint())
+                {
+                    var root = GetTree()?.EditedSceneRoot;
+                    if (root != null)
+                    {
+                        GD.Print("[DMapRenderer] Setting owners for sublayers");
+                        terrainObjectsLayer.Owner = root;
+                        coverObjectsLayer.Owner = root;
+                        portalLayer.Owner = root;
+                    }
+                    else
+                    {
+                        GD.Print("[DMapRenderer] No EditedSceneRoot found for sublayers");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                GD.PrintErr($"[DMapRenderer ERROR] Exception in CreateSceneLayerManagement: {ex.Message}");
+                GD.PrintErr($"[DMapRenderer ERROR] Stack trace: {ex.StackTrace}");
+                throw;
             }
         }
 

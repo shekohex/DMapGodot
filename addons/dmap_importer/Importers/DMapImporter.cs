@@ -16,9 +16,13 @@ namespace DMapImporter.Importers
 
         public DMapImporter()
         {
-            var loggerFactory = DMapLoggerFactory.CreateGodotOptimizedOptions();
+            var loggerFactory = DMapLoggerFactory.CreateDevelopmentOptions(); // Use debug level for better diagnostics
             var factory = DMapLoggerFactory.Create(loggerFactory);
             _logger = factory.CreateLogger<DMapImporter>();
+            
+            // Log startup to verify logging is working
+            _logger.LogInformation("DMapImporter initialized with development logging");
+            GD.Print("[DMAP] DMapImporter initialized - logging active");
         }
         public override string _GetImporterName()
         {
@@ -161,16 +165,47 @@ namespace DMapImporter.Importers
         {
             try
             {
-                _logger.LogInformation("Starting import of: {sourceFile}", sourceFile);
+                // Enhanced logging with both structured and Godot console output
+                _logger.LogInformation("=== DMAP IMPORT STARTED ===");
+                _logger.LogInformation("Source: {sourceFile}", sourceFile);
+                _logger.LogInformation("Save path: {savePath}", savePath);
+                
+                GD.Print($"[DMAP] Starting import of: {sourceFile}");
+                GD.Print($"[DMAP] Target save path: {savePath}");
+
+                // Convert Godot resource path to filesystem path
+                string absoluteSourceFile = ProjectSettings.GlobalizePath(sourceFile);
+                GD.Print($"[DMAP] Converted to absolute path: {absoluteSourceFile}");
 
                 // Validate source file exists
-                if (!File.Exists(sourceFile))
+                if (!File.Exists(absoluteSourceFile))
                 {
-                    _logger.LogError("Source file not found: {sourceFile}", sourceFile);
+                    var error = $"Source file not found: {sourceFile} (absolute: {absoluteSourceFile})";
+                    _logger.LogError(error);
+                    GD.PrintErr($"[DMAP ERROR] {error}");
+                    
+                    // Check if it's a symlink issue
+                    if (sourceFile.Contains("Game/5017"))
+                    {
+                        GD.Print("[DMAP] Checking symlink resolution...");
+                        var projectDir = ProjectSettings.GlobalizePath("res://");
+                        var gameDir = Path.Combine(projectDir, "Game", "5017");
+                        GD.Print($"[DMAP] Game directory: {gameDir}");
+                        GD.Print($"[DMAP] Game directory exists: {Directory.Exists(gameDir)}");
+                        if (Directory.Exists(gameDir))
+                        {
+                            var mapDir = Path.Combine(gameDir, "map", "map");
+                            GD.Print($"[DMAP] Map directory: {mapDir}");
+                            GD.Print($"[DMAP] Map directory exists: {Directory.Exists(mapDir)}");
+                        }
+                    }
+                    
                     return Error.FileNotFound;
                 }
 
-                // Extract import options
+                GD.Print($"[DMAP] File exists: {absoluteSourceFile}");
+
+                // Extract import options with detailed logging
                 int tileSize = options.ContainsKey("tile_size") ? options["tile_size"].AsInt32() : 32;
                 bool enableTerrain = options.ContainsKey("enable_terrain") ? options["enable_terrain"].AsBool() : true;
                 bool enablePortals = options.ContainsKey("enable_portals") ? options["enable_portals"].AsBool() : true;
@@ -179,88 +214,151 @@ namespace DMapImporter.Importers
                 float textureQuality = options.ContainsKey("texture_quality") ? options["texture_quality"].AsSingle() : 0.8f;
                 bool enableCompression = options.ContainsKey("enable_compression") ? options["enable_compression"].AsBool() : true;
 
-                _logger.LogDebug("Import options - TileSize: {tileSize}, Terrain: {enableTerrain}, Portals: {enablePortals}, Objects: {enableObjects}",
-                    tileSize, enableTerrain, enablePortals, enableObjects);
+                var optionsInfo = $"TileSize: {tileSize}, Terrain: {enableTerrain}, Portals: {enablePortals}, Objects: {enableObjects}, CoordSystem: {coordinateSystem}, TextureQuality: {textureQuality}, Compression: {enableCompression}";
+                _logger.LogInformation("Import options - {optionsInfo}", optionsInfo);
+                GD.Print($"[DMAP] Import options: {optionsInfo}");
 
-                // Load DMAP file using existing parser
+                // Load DMAP file using existing parser with enhanced error reporting
                 DmapFile dmap;
                 try
                 {
-                    dmap = new DmapFile(sourceFile);
-                    _logger.LogInformation("Successfully loaded DMAP: {dmapName}, Size: {width}x{height}",
-                        dmap.DmapName, dmap.SizeTiles.Width, dmap.SizeTiles.Height);
+                    GD.Print($"[DMAP] Loading DMAP file: {absoluteSourceFile}");
+                    var fileInfo = new FileInfo(absoluteSourceFile);
+                    GD.Print($"[DMAP] File size: {fileInfo.Length} bytes");
+                    
+                    dmap = new DmapFile(absoluteSourceFile);
+                    var successMsg = $"Successfully loaded DMAP: {dmap.DmapName}, Size: {dmap.SizeTiles.Width}x{dmap.SizeTiles.Height}";
+                    _logger.LogInformation(successMsg);
+                    GD.Print($"[DMAP] {successMsg}");
+                    GD.Print($"[DMAP] Portals: {dmap.Portals.Count}, TerrainScenes: {dmap.TerrainScenes.Count}, Covers: {dmap.Covers.Count}");
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to load DMAP file");
+                    var errorMsg = $"Failed to load DMAP file: {ex.Message}";
+                    _logger.LogError(ex, errorMsg);
+                    GD.PrintErr($"[DMAP ERROR] {errorMsg}");
+                    GD.PrintErr($"[DMAP ERROR] Exception type: {ex.GetType().Name}");
+                    if (ex.InnerException != null)
+                    {
+                        GD.PrintErr($"[DMAP ERROR] Inner exception: {ex.InnerException.Message}");
+                    }
+                    GD.PrintErr($"[DMAP ERROR] Stack trace: {ex.StackTrace}");
                     return Error.ParseError;
                 }
 
                 // Create DMapRenderer as root node
+                GD.Print("[DMAP] Creating DMapRenderer node...");
                 var renderer = new DMapRenderer();
-                renderer.Name = Path.GetFileNameWithoutExtension(sourceFile);
+                renderer.Name = Path.GetFileNameWithoutExtension(absoluteSourceFile);
                 renderer.TileSize = tileSize;
+                GD.Print($"[DMAP] Renderer created: {renderer.Name}, TileSize: {renderer.TileSize}");
 
                 // Load DMAP data into renderer
                 try
                 {
+                    GD.Print("[DMAP] Loading DMAP data into renderer...");
                     renderer.LoadFromDMap(dmap);
-                    _logger.LogDebug("Successfully populated renderer with DMAP data");
+                    var successMsg = "Successfully populated renderer with DMAP data";
+                    _logger.LogInformation(successMsg);
+                    GD.Print($"[DMAP] {successMsg}");
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to populate renderer");
+                    var errorMsg = $"Failed to populate renderer: {ex.Message}";
+                    _logger.LogError(ex, errorMsg);
+                    GD.PrintErr($"[DMAP ERROR] {errorMsg}");
+                    GD.PrintErr($"[DMAP ERROR] Exception type: {ex.GetType().Name}");
+                    if (ex.InnerException != null)
+                    {
+                        GD.PrintErr($"[DMAP ERROR] Inner exception: {ex.InnerException.Message}");
+                    }
+                    GD.PrintErr($"[DMAP ERROR] Stack trace: {ex.StackTrace}");
                     renderer?.QueueFree();
                     return Error.CantCreate;
                 }
 
                 // Create PackedScene
+                GD.Print("[DMAP] Creating PackedScene...");
                 var packedScene = new PackedScene();
                 try
                 {
+                    GD.Print("[DMAP] Packing renderer into scene...");
                     var result = packedScene.Pack(renderer);
                     if (result != Error.Ok)
                     {
-                        _logger.LogError("Failed to pack scene: {result}", result);
+                        var errorMsg = $"Failed to pack scene: {result}";
+                        _logger.LogError(errorMsg);
+                        GD.PrintErr($"[DMAP ERROR] {errorMsg}");
                         renderer?.QueueFree();
                         return result;
                     }
-                    _logger.LogDebug("Successfully packed scene");
+                    var successMsg = "Successfully packed scene";
+                    _logger.LogInformation(successMsg);
+                    GD.Print($"[DMAP] {successMsg}");
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Exception while packing scene");
+                    var errorMsg = $"Exception while packing scene: {ex.Message}";
+                    _logger.LogError(ex, errorMsg);
+                    GD.PrintErr($"[DMAP ERROR] {errorMsg}");
+                    GD.PrintErr($"[DMAP ERROR] Exception type: {ex.GetType().Name}");
+                    if (ex.InnerException != null)
+                    {
+                        GD.PrintErr($"[DMAP ERROR] Inner exception: {ex.InnerException.Message}");
+                    }
                     renderer?.QueueFree();
                     return Error.CantCreate;
                 }
 
                 // Save PackedScene
                 string outputPath = $"{savePath}.{_GetSaveExtension()}";
+                GD.Print($"[DMAP] Saving PackedScene to: {outputPath}");
                 try
                 {
                     var saveResult = ResourceSaver.Save(packedScene, outputPath);
                     if (saveResult != Error.Ok)
                     {
-                        _logger.LogError("Failed to save PackedScene: {saveResult}", saveResult);
+                        var errorMsg = $"Failed to save PackedScene: {saveResult}";
+                        _logger.LogError(errorMsg);
+                        GD.PrintErr($"[DMAP ERROR] {errorMsg}");
                         return saveResult;
                     }
-                    _logger.LogInformation("Successfully saved PackedScene to: {outputPath}", outputPath);
+                    var successMsg = $"Successfully saved PackedScene to: {outputPath}";
+                    _logger.LogInformation(successMsg);
+                    GD.Print($"[DMAP] {successMsg}");
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Exception while saving PackedScene");
+                    var errorMsg = $"Exception while saving PackedScene: {ex.Message}";
+                    _logger.LogError(ex, errorMsg);
+                    GD.PrintErr($"[DMAP ERROR] {errorMsg}");
+                    GD.PrintErr($"[DMAP ERROR] Exception type: {ex.GetType().Name}");
+                    if (ex.InnerException != null)
+                    {
+                        GD.PrintErr($"[DMAP ERROR] Inner exception: {ex.InnerException.Message}");
+                    }
                     return Error.FileCantWrite;
                 }
 
                 // Clean up temporary nodes
                 renderer?.QueueFree();
 
-                _logger.LogInformation("Import completed successfully");
+                var completionMsg = "=== DMAP IMPORT COMPLETED SUCCESSFULLY ===";
+                _logger.LogInformation(completionMsg);
+                GD.Print($"[DMAP] {completionMsg}");
                 return Error.Ok;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error during import");
+                var errorMsg = $"Unexpected error during import: {ex.Message}";
+                _logger.LogError(ex, errorMsg);
+                GD.PrintErr($"[DMAP FATAL ERROR] {errorMsg}");
+                GD.PrintErr($"[DMAP FATAL ERROR] Exception type: {ex.GetType().Name}");
+                if (ex.InnerException != null)
+                {
+                    GD.PrintErr($"[DMAP FATAL ERROR] Inner exception: {ex.InnerException.Message}");
+                }
+                GD.PrintErr($"[DMAP FATAL ERROR] Stack trace: {ex.StackTrace}");
                 return Error.Failed;
             }
         }
