@@ -28,6 +28,8 @@ namespace DMapImporter.Editor
 
         public override void _Ready()
         {
+            Name = "DMap Editor";
+            AddThemeConstantOverride("separation", 4);
             CustomMinimumSize = new Vector2(250, 0);
 
             _mainContainer = new VBoxContainer();

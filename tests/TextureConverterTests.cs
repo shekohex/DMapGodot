@@ -270,6 +270,34 @@ public partial class TextureConverterTests : Node
         AssertThat(true).IsTrue();
     }
 
+    [TestCase]
+    public void TestResPathConversion()
+    {
+        TextureConverter.ClearCache();
+
+        // Test that res:// paths work correctly
+        var gameDataPath = Path.Combine(ProjectSettings.GlobalizePath("res://"), "Game");
+        if (Directory.Exists(gameDataPath))
+        {
+            var ddsFiles = Directory.GetFiles(gameDataPath, "*.dds", SearchOption.AllDirectories);
+            if (ddsFiles.Length > 0)
+            {
+                var absolutePath = ddsFiles[0];
+                var projectRoot = ProjectSettings.GlobalizePath("res://");
+                var relativePath = Path.GetRelativePath(projectRoot, absolutePath);
+                var resPath = "res://" + relativePath.Replace(Path.DirectorySeparatorChar, '/');
+
+                var result = TextureConverter.ConvertDDSToTexture(resPath);
+                
+                // Should work with res:// paths for files within the project
+                AssertThat(result).IsNotNull();
+                return;
+            }
+        }
+
+        AssertThat(true).IsTrue();
+    }
+
     public override void _ExitTree()
     {
         TextureConverter.ClearCache();

@@ -1,5 +1,0 @@
-[gd_scene load_steps=2 format=3 uid="uid://cq2viixcm4bpc"]
-
-[ext_resource type="PackedScene" uid="uid://bksp1jg5nq4nt" path="res://Game/5017/map/map/arena.DMap" id="1_ubfh8"]
-
-[node name="arena" instance=ExtResource("1_ubfh8")]
